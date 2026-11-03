@@ -23,7 +23,7 @@ function property(key: string): string | undefined {
   return meta('property', key);
 }
 
-test('publishes search and social metadata for the 3D wastewater console', () => {
+test('publishes search and social metadata for the 3D automotive console', () => {
   const title = /<title>([^<]+)<\/title>/.exec(html)?.[1] ?? '';
   const description = meta('name', 'description') ?? '';
   const keywords = (meta('name', 'keywords') ?? '')
@@ -31,7 +31,7 @@ test('publishes search and social metadata for the 3D wastewater console', () =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-  expect(title).toContain('污水处理厂');
+  expect(title).toContain('汽车制造工厂');
   expect(title).toContain('3D');
   expect(title).toContain('ICE3');
   expect(description).toContain('3D');
@@ -46,7 +46,7 @@ test('publishes search and social metadata for the 3D wastewater console', () =>
 test('keeps canonical, Open Graph and Twitter links on the Pages URL', () => {
   expect(html).toContain(`<link rel="canonical" href="${canonical}"`);
   expect(property('og:url')).toBe(canonical);
-  expect(property('og:title')).toContain('污水处理厂');
+  expect(property('og:title')).toContain('汽车制造工厂');
   expect(property('og:description')).toContain('Agent');
   expect(property('og:image')).toBe(`${canonical}og-cover.jpg`);
   expect(meta('name', 'twitter:card')).toBe('summary_large_image');
@@ -82,7 +82,7 @@ test('publishes crawl entry points and a meaningful canvas text alternative', ()
   expect(summary).toContain('class="sr-only"');
   expect(text.length).toBeGreaterThan(600);
   for (const term of [
-    '污水处理厂',
+    '汽车制造工厂',
     '3D',
     '设备',
     'Agent',

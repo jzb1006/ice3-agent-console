@@ -14,14 +14,14 @@ test('renders all grouped built-in scenarios above the composer', () => {
   expect(navigation.getAttribute('aria-label')).toBe('快捷指令');
   expect([...navigation.querySelectorAll('.quick-action-group__label')]
     .map((element) => element.textContent)).toEqual([
-    '工艺巡览',
-    '系统专题',
+    '生产导览',
+    '质量与物流',
     '快速操作',
   ]);
-  expect(navigation.querySelectorAll('button')).toHaveLength(11);
+  expect(navigation.querySelectorAll('button')).toHaveLength(6);
 
   [...navigation.querySelectorAll<HTMLButtonElement>('button')]
-    .find((button) => button.textContent === '曝气系统')!
+    .find((button) => button.textContent === '车身焊装')!
     .click();
-  expect(selected).toEqual(['查看曝气系统']);
+  expect(selected).toEqual(['带我看车身焊装线']);
 });

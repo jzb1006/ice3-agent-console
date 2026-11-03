@@ -80,7 +80,6 @@ test('links to every public ICE3 project from the conversation panel', () => {
     'Industrial',
     'Toolchain',
     'Docs',
-    'Water',
     'Studio',
   ]);
   expect(links.map((link) => link.href)).toEqual([
@@ -89,7 +88,6 @@ test('links to every public ICE3 project from the conversation panel', () => {
     'https://github.com/ice-3d/ice3-industrial',
     'https://github.com/ice-3d/ice3-toolchain',
     'https://github.com/ice-3d/ice3-doc',
-    'https://github.com/ice-3d/ice3-water-demo',
     'https://github.com/ice-3d/ice3-studio',
   ]);
   for (const link of links) {

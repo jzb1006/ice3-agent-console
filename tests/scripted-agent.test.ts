@@ -17,7 +17,7 @@ const input = (text: string): RunAgentInput => ({
 test('returns a deterministic overview tool sequence', async () => {
   const events = [];
   for await (const event of createScriptedAgent({ delayMs: 0 }).run(
-    input('带我看一下整个污水处理厂'),
+    input('带我看一下整个汽车制造工厂'),
   )) {
     events.push(event);
   }
@@ -30,7 +30,7 @@ test('returns a deterministic overview tool sequence', async () => {
 });
 
 test('plays a multi-stop guided tour for opening autoplay', async () => {
-  const request = input('带我看一下整个污水处理厂');
+  const request = input('带我看一下整个汽车制造工厂');
   request.context = [{
     description: 'presentation mode',
     value: 'guided-tour',
@@ -52,31 +52,23 @@ test('plays a multi-stop guided tour for opening autoplay', async () => {
     { name: 'set_camera_view', args: { view: 'overview' } },
     {
       name: 'focus_equipment',
-      args: { selectionId: 'ice3-virtual-wwtp/equipment/PS-101-P' },
+      args: { selectionId: 'ice3-virtual-auto-plant/equipment/BODY-101' },
     },
     {
       name: 'focus_equipment',
-      args: { selectionId: 'ice3-virtual-wwtp/equipment/AE-101' },
+      args: { selectionId: 'ice3-virtual-auto-plant/equipment/ROBOT-201' },
     },
     {
       name: 'focus_equipment',
-      args: { selectionId: 'ice3-virtual-wwtp/equipment/AE-103' },
+      args: { selectionId: 'ice3-virtual-auto-plant/equipment/PAINT-301' },
     },
     {
       name: 'focus_equipment',
-      args: { selectionId: 'ice3-virtual-wwtp/equipment/SC-101' },
+      args: { selectionId: 'ice3-virtual-auto-plant/equipment/TRIM-401' },
     },
     {
       name: 'focus_equipment',
-      args: { selectionId: 'ice3-virtual-wwtp/equipment/CHEM-101-D' },
-    },
-    {
-      name: 'focus_equipment',
-      args: { selectionId: 'ice3-virtual-wwtp/equipment/FL-101' },
-    },
-    {
-      name: 'focus_equipment',
-      args: { selectionId: 'ice3-virtual-wwtp/equipment/DW-101' },
+      args: { selectionId: 'ice3-virtual-auto-plant/equipment/QA-501' },
     },
     { name: 'clear_scene_focus', args: {} },
   ]);
@@ -86,7 +78,7 @@ test('uses current equipment context for a follow-up explanation', async () => {
   const request = input('讲讲这个设备');
   request.context = [{
     description: 'selected equipment',
-    value: 'ice3-virtual-wwtp/equipment/AE-101',
+    value: 'ice3-virtual-auto-plant/equipment/ROBOT-201',
   }];
   const names: string[] = [];
   for await (const event of createScriptedAgent({ delayMs: 0 }).run(request)) {
@@ -108,7 +100,7 @@ test('locates known equipment groups and clears focus', async () => {
     }
     return names;
   };
-  expect(await toolNames('二沉池在哪里')).toContain('focus_equipment');
-  expect(await toolNames('介绍一下好氧池')).toContain('focus_equipment');
+  expect(await toolNames('焊装机器人在哪里')).toContain('focus_equipment');
+  expect(await toolNames('介绍一下涂装工艺')).toContain('focus_equipment');
   expect(await toolNames('回到全厂')).toContain('clear_scene_focus');
 });

@@ -6,15 +6,15 @@ import {
   demoEquipmentSelectionId,
 } from '../shared/demo-asset.js';
 
-test('defines the synthetic wastewater demo identity once', () => {
+test('defines the synthetic automotive demo identity once', () => {
   expect(DEMO_ASSET).toEqual({
-    id: 'ice3-virtual-wwtp',
-    label: '虚拟市政污水处理厂',
-    rootPath: 'assets/wastewater-plant',
+    id: 'ice3-virtual-auto-plant',
+    label: '虚拟汽车制造工厂',
+    rootPath: 'assets/automotive-plant',
     manifestPath: 'equipment.json',
     tilesetPath: 'tiled/tileset.json',
   });
-  expect(DEMO_ASSET_ID).toBe('ice3-virtual-wwtp');
+  expect(DEMO_ASSET_ID).toBe('ice3-virtual-auto-plant');
   expect(demoEquipmentSelectionId('AE-101'))
-    .toBe('ice3-virtual-wwtp/equipment/AE-101');
+    .toBe('ice3-virtual-auto-plant/equipment/AE-101');
 });

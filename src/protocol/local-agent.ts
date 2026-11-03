@@ -1,4 +1,4 @@
-import { createScriptedAgent } from '../../server/agents/scripted.js';
+import { createFactoryScriptedAgent } from './factory-local-agent.js';
 import type {
   RunHandlers,
   RunRequest,
@@ -11,7 +11,7 @@ export const runAgentLocally: RunTransport = async (
   handlers: RunHandlers,
   signal?: AbortSignal,
 ) => {
-  const agent = createScriptedAgent({ delayMs: 16 });
+  const agent = createFactoryScriptedAgent({ delayMs: 16 });
   try {
     for await (const event of agent.run(toRunAgentInput(request), signal)) {
       if (signal?.aborted) return;

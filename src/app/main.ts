@@ -1,5 +1,5 @@
 import type { EquipmentSummary } from '../../shared/scene.js';
-import { createSceneController } from '../scene/browser.js';
+import { createFactorySceneController as createSceneController } from '../scene/factory-browser.js';
 import { ChatPanel } from '../view/chat-panel.js';
 import { EquipmentCard } from '../view/equipment-card.js';
 import { createQuickActions } from '../view/quick-actions.js';
@@ -52,7 +52,7 @@ export async function startConsole(host: HTMLElement): Promise<void> {
   const equipment = new EquipmentCard(host);
   const status = new ConsoleStatus(host);
   const view = new ConsoleView(chat, equipment, status);
-  const demo = resolveDemoMode(window.location.search, __ICE_DEMO__);
+  const demo = resolveDemoMode(window.location.search, true);
   const autoplay = resolveAutoplay(window.location.search, true);
   chat.setMode('scripted', demo ? 'local' : 'server');
 

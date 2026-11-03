@@ -1,40 +1,35 @@
 import { expect } from '#test-expect';
-import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { SCENE_TOOLS } from '../shared/contract.js';
 import { DEMO_ASSET_ID } from '../shared/demo-asset.js';
+import { FACTORY_EQUIPMENT } from '../shared/factory.js';
 import {
-  QUICK_ACTION_GROUPS,
-  SCRIPTED_SCENARIOS,
-  matchScenario,
-} from '../shared/scenarios.js';
+  FACTORY_QUICK_ACTION_GROUPS,
+  FACTORY_SCENARIOS,
+  matchFactoryScenario,
+} from '../shared/factory-scenarios.js';
 
 test('publishes the confirmed quick-action groups and script order', () => {
-  expect(QUICK_ACTION_GROUPS.map((group) => group.label)).toEqual([
-    '工艺巡览',
-    '系统专题',
+  expect(FACTORY_QUICK_ACTION_GROUPS.map((group) => group.label)).toEqual([
+    '生产导览',
+    '质量与物流',
     '快速操作',
   ]);
-  expect(QUICK_ACTION_GROUPS.flatMap((group) => (
+  expect(FACTORY_QUICK_ACTION_GROUPS.flatMap((group) => (
     group.actions.map((action) => action.label)
   ))).toEqual([
-    '进水预处理',
-    'AAO 生化段',
-    '二沉池',
-    '深度处理',
-    '污泥处理',
-    '曝气系统',
-    '加药系统',
-    '出水在线监测',
-    '事故池与应急回流',
-    '查看全厂',
+    '车身焊装',
+    '涂装工艺',
+    '总装流程',
+    '质量检测',
+    '查看整厂',
     '清除聚焦',
   ]);
 });
 
 test('every static scenario uses approved tools and focuses equipment', () => {
-  expect(SCRIPTED_SCENARIOS).toHaveLength(9);
-  for (const scenario of SCRIPTED_SCENARIOS) {
+  expect(FACTORY_SCENARIOS).toHaveLength(4);
+  for (const scenario of FACTORY_SCENARIOS) {
     expect(scenario.steps.length).toBeGreaterThan(0);
     expect(scenario.steps.some((step) => (
       step.tool.name === 'focus_equipment'
@@ -47,32 +42,19 @@ test('every static scenario uses approved tools and focuses equipment', () => {
 });
 
 test('every static scenario ends by clearing focus and returning to overview', () => {
-  for (const scenario of SCRIPTED_SCENARIOS) {
+  for (const scenario of FACTORY_SCENARIOS) {
     expect(scenario.steps.at(-1)?.tool).toEqual({
       name: 'clear_scene_focus',
       args: {},
     });
-    expect(scenario.steps.at(-1)?.text).toContain('全厂');
+    expect(scenario.steps.at(-1)?.text).toContain('整厂');
   }
 });
 
-test('every built-in scene action targets equipment in the synthetic wastewater demo', async () => {
-  const bindings = JSON.parse(await readFile(
-    'public/assets/wastewater-plant/tiled/bindings.json',
-    'utf8',
-  )) as {
-    bindings: Array<{
-      selectionId: string;
-      equipmentTag?: string;
-    }>;
-  };
-  const knownIds = new Set(
-    bindings.bindings
-      .filter((item) => item.equipmentTag)
-      .map((item) => item.selectionId),
-  );
+test('every built-in scene action targets equipment in the automotive factory', () => {
+  const knownIds = new Set(FACTORY_EQUIPMENT.map((item) => item.selectionId));
   const prefix = `${DEMO_ASSET_ID}/equipment/`;
-  const focusTargets = SCRIPTED_SCENARIOS.flatMap((scenario) => (
+  const focusTargets = FACTORY_SCENARIOS.flatMap((scenario) => (
     scenario.steps
       .filter((step) => step.tool.name === 'focus_equipment')
       .map((step) => String(step.tool.args.selectionId))
@@ -86,10 +68,9 @@ test('every built-in scene action targets equipment in the synthetic wastewater 
 });
 
 test('matches the intended scenario without crossing topics', () => {
-  expect(matchScenario('带我看看曝气系统')?.id).toBe('aeration');
-  expect(matchScenario('查看加药系统')?.id).toBe('dosing');
-  expect(matchScenario('分析出水在线监测')?.id).toBe('effluent');
-  expect(matchScenario('说明事故池和应急回流')?.id).toBe('incident');
-  expect(matchScenario('带我看污泥处理')?.id).toBe('sludge');
-  expect(matchScenario('这个设备怎么运行')).toBeUndefined();
+  expect(matchFactoryScenario('带我看看焊装机器人')?.id).toBe('body-shop');
+  expect(matchFactoryScenario('查看涂装工艺')?.id).toBe('paint-shop');
+  expect(matchFactoryScenario('分析总装流程')?.id).toBe('final-assembly');
+  expect(matchFactoryScenario('说明质量检测')?.id).toBe('quality');
+  expect(matchFactoryScenario('这个设备怎么运行')).toBeUndefined();
 });

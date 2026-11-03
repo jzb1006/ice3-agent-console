@@ -49,7 +49,7 @@ test('streams a complete scripted run', async () => {
       messages: [{
         id: 'user-1',
         role: 'user',
-        content: '带我看一下整个污水处理厂',
+        content: '带我看一下整个汽车制造工厂',
       }],
       context: [],
       tools: [],

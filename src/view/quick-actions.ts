@@ -1,4 +1,4 @@
-import { QUICK_ACTION_GROUPS } from '../../shared/scenarios.js';
+import { FACTORY_QUICK_ACTION_GROUPS as QUICK_ACTION_GROUPS } from '../../shared/factory-scenarios.js';
 
 export type { QuickAction } from '../../shared/scenarios.js';
 

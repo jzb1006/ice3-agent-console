@@ -1,7 +1,7 @@
 export const DEMO_ASSET = Object.freeze({
-  id: 'ice3-virtual-wwtp',
-  label: '虚拟市政污水处理厂',
-  rootPath: 'assets/wastewater-plant',
+  id: 'ice3-virtual-auto-plant',
+  label: '虚拟汽车制造工厂',
+  rootPath: 'assets/automotive-plant',
   manifestPath: 'equipment.json',
   tilesetPath: 'tiled/tileset.json',
 });

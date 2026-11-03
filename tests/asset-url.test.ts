@@ -7,13 +7,13 @@ test('resolves demo Tileset and manifest relative to the deployed page', () => {
     'https://example.com/apps/agent-console/',
     'tiled/tileset.json',
   )).toBe(
-    'https://example.com/apps/agent-console/assets/wastewater-plant/tiled/tileset.json',
+    'https://example.com/apps/agent-console/assets/automotive-plant/tiled/tileset.json',
   );
   expect(resolveDemoAssetUrl(
     'https://example.com/apps/agent-console/',
     'equipment.json',
   )).toBe(
-    'https://example.com/apps/agent-console/assets/wastewater-plant/equipment.json',
+    'https://example.com/apps/agent-console/assets/automotive-plant/equipment.json',
   );
 });
 
@@ -22,6 +22,6 @@ test('preserves a query-free path from a nested page URL', () => {
     'https://example.com/apps/agent-console/index.html?demo=1',
     'tiled/tileset.json',
   )).toBe(
-    'https://example.com/apps/agent-console/assets/wastewater-plant/tiled/tileset.json',
+    'https://example.com/apps/agent-console/assets/automotive-plant/tiled/tileset.json',
   );
 });

@@ -14,9 +14,9 @@ import type {
 class FakeScene implements SceneController {
   readonly commands: unknown[] = [];
   readonly recordsValue: readonly EquipmentRecord[] = [{
-    selectionId: 'ice3-virtual-wwtp/equipment/SC-101',
-    name: '二沉池 A',
-    metadata: { equipmentTag: 'SC-101' },
+    selectionId: 'ice3-virtual-auto-plant/equipment/ROBOT-201',
+    name: '一号点焊机器人',
+    metadata: { equipmentTag: 'ROBOT-201' },
     bounds: { min: [-7, 0, -7], max: [7, 5, 7] },
   }];
 
@@ -46,8 +46,8 @@ class FakeScene implements SceneController {
       ok: true,
       selectionIds: type === 'clear'
         ? []
-        : ['ice3-virtual-wwtp/equipment/SC-101'],
-      message: type === 'clear' ? '已返回全厂视角' : '已定位二沉池 A',
+        : ['ice3-virtual-auto-plant/equipment/ROBOT-201'],
+      message: type === 'clear' ? '已返回整厂视角' : '已定位一号点焊机器人',
     };
   }
 
@@ -104,7 +104,7 @@ function scriptedTransport(
     handlers.onEvent({
       type: EventType.TOOL_CALL_ARGS,
       toolCallId: 'tool-1',
-      delta: '{"selectionId":"ice3-virtual-wwtp/equipment/SC-101"}',
+      delta: '{"selectionId":"ice3-virtual-auto-plant/equipment/ROBOT-201"}',
     });
     handlers.onEvent({
       type: EventType.TOOL_CALL_END,
@@ -128,11 +128,11 @@ test('routes a complete scene tool call to the controller', async () => {
     threadId: 'thread-1',
   });
 
-  await session.send('定位二沉池');
+  await session.send('定位焊装机器人');
 
   expect(scene.commands).toEqual([{
     type: 'focus',
-    selectionIds: ['ice3-virtual-wwtp/equipment/SC-101'],
+    selectionIds: ['ice3-virtual-auto-plant/equipment/ROBOT-201'],
   }]);
   expect(session.state.status).toBe('idle');
 });
@@ -295,7 +295,7 @@ test('a replacement run keeps ownership of the busy state', async () => {
   const view = new FakeView();
   const transport: RunTransport = async (request, handlers, signal) => {
     const isAutoplay = request.messages.some(
-      (message) => message.content === '带我看一下整个污水处理厂',
+      (message) => message.content === '带我看一下整个汽车制造工厂',
     );
     if (isAutoplay) {
       handlers.onEvent({
@@ -324,7 +324,7 @@ test('a replacement run keeps ownership of the busy state', async () => {
 
   session.start();
   await autoplayRequestStarted;
-  const replacement = session.send('定位二沉池');
+  const replacement = session.send('定位焊装机器人');
   await manualRequestStarted;
   await new Promise((resolve) => setTimeout(resolve, 0));
   expect(view.busyStates.at(-1)).toBe(true);
@@ -344,11 +344,11 @@ test('sends the complete equipment catalog to the Agent', async () => {
     view: new FakeView(),
     threadId: 'thread-1',
   });
-  await session.send('找一台二沉池');
+  await session.send('找一台焊装机器人');
   const catalog = captured?.context?.find(
     (entry) => entry.description === 'equipment catalog',
   );
   expect(catalog).toBeDefined();
-  expect(catalog?.value).toContain('SC-101');
-  expect(catalog?.value).toContain('二沉池 A');
+  expect(catalog?.value).toContain('ROBOT-201');
+  expect(catalog?.value).toContain('一号点焊机器人');
 });

@@ -3,7 +3,7 @@ export const SCENE_TOOL_DEFINITIONS = Object.freeze([
     type: 'function',
     function: {
       name: 'find_equipment',
-      description: '按名称、位号、工段或区域查询污水处理设备。',
+      description: '按名称、位号、工艺段或区域查询汽车制造设备。',
       parameters: {
         type: 'object',
         properties: {

@@ -31,10 +31,6 @@ const PROJECT_LINKS = [
     url: 'https://github.com/ice-3d/ice3-doc',
   },
   {
-    label: 'Water',
-    url: 'https://github.com/ice-3d/ice3-water-demo',
-  },
-  {
     label: 'Studio',
     url: 'https://github.com/ice-3d/ice3-studio',
   },
@@ -55,12 +51,12 @@ export class ChatPanel {
     const document = host.ownerDocument;
     this.element = document.createElement('aside');
     this.element.className = 'conversation-panel';
-    this.element.setAttribute('aria-label', '设备助手');
+    this.element.setAttribute('aria-label', '汽车制造现场助手');
     this.element.innerHTML = `
       <header class="conversation-header">
         <div>
           <span class="eyebrow">ICE3 FIELD AGENT</span>
-          <h1>工业现场助手</h1>
+          <h1>汽车制造现场助手</h1>
         </div>
         <div class="conversation-header__actions">
           <span class="agent-state" data-role="agent-state">就绪</span>
@@ -79,7 +75,7 @@ export class ChatPanel {
         <form class="composer" data-role="composer">
           <label class="sr-only" for="agent-command">向现场助手提问</label>
           <textarea id="agent-command" data-role="composer-input"
-            rows="1" placeholder="例如：定位二沉池 A"></textarea>
+            rows="1" placeholder="例如：带我看车身焊装线"></textarea>
           <button type="submit" data-role="composer-submit">发送</button>
         </form>
         <nav class="project-links" data-role="project-links"
@@ -168,7 +164,7 @@ export class ChatPanel {
       intro.className = 'message message--assistant message--intro';
       intro.innerHTML = [
         '<p>选择设备，或者直接问我：</p>',
-        '<p><strong>查看全厂 · 定位二沉池 · 讲解好氧池</strong></p>',
+        '<p><strong>查看整厂 · 定位焊装机器人 · 讲解总装流程</strong></p>',
       ].join('');
       this.scroller.append(intro);
     }

@@ -8,7 +8,7 @@
 
 ## 目标结果
 
-同时运行 Web 应用和 Agent service，并验证脚本对话和 Scene action。
+运行浏览器本地汽车制造工厂演示，并按需启动 Agent service 验证 SSE/AG-UI。
 
 ## 前置条件
 
@@ -16,8 +16,8 @@
 - npm 11 或更高版本
 - 支持 WebGL2 的浏览器
 
-未配置 model variable 时，本地 Agent service 默认使用 scripted mode。默认 Scene 固定
-为虚构污水处理厂；加载其它合规 3D 模型的方法见
+未配置 model variable 时，本地 Agent service 默认使用 scripted mode。默认 Scene 是
+前端参数化生成的虚拟汽车制造工厂；真实 3D 模型的接入方法见
 [接入其它 3D 模型](other-models.md)。
 
 ## 操作步骤

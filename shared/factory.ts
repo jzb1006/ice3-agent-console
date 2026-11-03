@@ -1,0 +1,170 @@
+import { demoEquipmentSelectionId } from './demo-asset.js';
+
+export interface FactoryEquipment {
+  readonly selectionId: string;
+  readonly tag: string;
+  readonly name: string;
+  readonly stage: string;
+  readonly area: string;
+  readonly connections: readonly string[];
+  readonly position: readonly [number, number, number];
+  readonly size: readonly [number, number, number];
+  readonly color: string;
+}
+
+const equipment = (
+  tag: string,
+  name: string,
+  stage: string,
+  area: string,
+  position: readonly [number, number, number],
+  size: readonly [number, number, number],
+  color: string,
+  connections: readonly string[] = [],
+): FactoryEquipment => Object.freeze({
+  selectionId: demoEquipmentSelectionId(tag),
+  tag,
+  name,
+  stage,
+  area,
+  connections,
+  position,
+  size,
+  color,
+});
+
+export const FACTORY_EQUIPMENT: readonly FactoryEquipment[] = Object.freeze([
+  equipment(
+    'BODY-101',
+    '车身上料工位',
+    '冲压与上料',
+    '冲压车间',
+    [-20, 1.1, 0],
+    [4.4, 2.2, 5.2],
+    '#4f6f86',
+    ['CONV-101'],
+  ),
+  equipment(
+    'CONV-101',
+    '主线车身输送机',
+    '输送物流',
+    '主装配线',
+    [-14, 0.55, 0],
+    [5.2, 0.65, 3.5],
+    '#5d7384',
+    ['WELD-201'],
+  ),
+  equipment(
+    'WELD-201',
+    '车身焊装机器人岛',
+    '车身焊装',
+    '车身车间',
+    [-8, 1.45, 0],
+    [4.5, 2.9, 5.8],
+    '#a06c42',
+    ['ROBOT-201', 'PAINT-301'],
+  ),
+  equipment(
+    'ROBOT-201',
+    '一号点焊机器人',
+    '车身焊装',
+    '车身车间',
+    [-8, 3.5, -3.5],
+    [1.2, 3.1, 1.2],
+    '#cc7846',
+    ['WELD-201'],
+  ),
+  equipment(
+    'PAINT-301',
+    '自动喷涂舱',
+    '涂装',
+    '涂装车间',
+    [0, 1.8, 0],
+    [5.2, 3.6, 6.2],
+    '#476c72',
+    ['OVEN-302'],
+  ),
+  equipment(
+    'OVEN-302',
+    '漆面烘干炉',
+    '涂装',
+    '涂装车间',
+    [6.5, 1.5, 0],
+    [5.6, 3, 5.4],
+    '#8b5f3d',
+    ['TRIM-401'],
+  ),
+  equipment(
+    'TRIM-401',
+    '内饰装配工位',
+    '总装',
+    '总装车间',
+    [13, 1.1, 0],
+    [4.4, 2.2, 5.2],
+    '#587b6f',
+    ['POWER-402', 'GLASS-403'],
+  ),
+  equipment(
+    'POWER-402',
+    '动力总成安装站',
+    '总装',
+    '总装车间',
+    [18.5, 1.25, -2.8],
+    [3.8, 2.5, 3.2],
+    '#667d8e',
+    ['GLASS-403'],
+  ),
+  equipment(
+    'GLASS-403',
+    '玻璃与车门安装站',
+    '总装',
+    '总装车间',
+    [19, 1.15, 2.8],
+    [3.8, 2.3, 3.2],
+    '#4e707b',
+    ['QA-501'],
+  ),
+  equipment(
+    'QA-501',
+    '视觉质量检测门',
+    '质量检测',
+    '质量中心',
+    [24.5, 1.9, 0],
+    [3.2, 3.8, 6],
+    '#6b5f87',
+    ['EOL-601'],
+  ),
+  equipment(
+    'EOL-601',
+    '整车下线测试台',
+    '终检下线',
+    '质量中心',
+    [30, 0.95, 0],
+    [4.2, 1.9, 4.6],
+    '#8b7048',
+    ['LOGI-701'],
+  ),
+  equipment(
+    'LOGI-701',
+    '成品车物流月台',
+    '成品物流',
+    '物流中心',
+    [36, 1.1, 0],
+    [4.6, 2.2, 5],
+    '#516f67',
+    [],
+  ),
+]);
+
+export const FACTORY_EQUIPMENT_BY_ID = new Map(
+  FACTORY_EQUIPMENT.map((item) => [item.selectionId, item]),
+);
+
+export const FACTORY_AREAS = Object.freeze([
+  '冲压车间',
+  '车身车间',
+  '涂装车间',
+  '总装车间',
+  '质量中心',
+  '物流中心',
+] as const);

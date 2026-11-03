@@ -292,7 +292,7 @@ export function createSession(options: SessionOptions): AgentConsoleSession {
       autoplayBaseState = state;
       autoplayTimer = setTimeout(() => {
         autoplayTimer = null;
-        void run('带我看一下整个污水处理厂', { autoplay: true });
+        void run('带我看一下整个汽车制造工厂', { autoplay: true });
       }, autoplay.delayMs);
     },
     send,

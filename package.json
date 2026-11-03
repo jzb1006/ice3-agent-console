@@ -16,6 +16,7 @@
     "predev": "node scripts/generate-equipment-manifest.mjs",
     "dev": "node scripts/dev.mjs",
     "dev:web": "webpack serve --mode development",
+    "dev:frontend": "webpack serve --mode development",
     "dev:api": "tsx watch server/index.ts",
     "prebuild": "node scripts/generate-equipment-manifest.mjs",
     "build": "webpack --mode production",
