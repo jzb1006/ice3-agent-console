@@ -16,7 +16,8 @@ export interface SceneCommand {
     | 'focus'
     | 'highlight'
     | 'camera'
-    | 'clear';
+    | 'clear'
+    | 'production';
   readonly query?: string;
   readonly selectionIds?: readonly string[];
   readonly area?: string;

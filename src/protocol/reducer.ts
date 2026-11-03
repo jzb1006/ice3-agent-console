@@ -17,6 +17,7 @@ export interface ToolItem {
   args?: unknown;
   status: 'streaming' | 'args-done' | 'result';
   parseError?: string;
+  cancelled?: boolean;
   result?: unknown;
 }
 
@@ -259,7 +260,11 @@ export function reduceThread(state: ThreadState, action: Action): Reduction {
                   ...item,
                   status: 'result',
                   result: action.result,
-                  ...(action.error ? { parseError: String(action.error) } : {}),
+                  ...(action.cancelled
+                    ? { cancelled: true, parseError: undefined }
+                    : action.error
+                      ? { parseError: String(action.error) }
+                      : {}),
                 }
               : item
           )),

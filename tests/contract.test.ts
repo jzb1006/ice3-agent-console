@@ -13,6 +13,7 @@ test('publishes an immutable scene-tool vocabulary', () => {
     'highlight_equipment',
     'set_camera_view',
     'clear_scene_focus',
+    'play_production',
   ]);
   expect(Object.isFrozen(SCENE_TOOLS)).toBe(true);
   expect(isSceneToolName('focus_equipment')).toBe(true);

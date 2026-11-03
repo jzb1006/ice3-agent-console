@@ -92,4 +92,15 @@ export const SCENE_TOOL_DEFINITIONS = Object.freeze([
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'play_production',
+      description: '播放从原材料进入到整车驶出成品物流月台的完整生产流动画。',
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+    },
+  },
 ] as const);

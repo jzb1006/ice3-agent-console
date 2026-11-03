@@ -85,6 +85,8 @@ export function commandForTool(
     }
     case 'clear_scene_focus':
       return { type: 'clear' };
+    case 'play_production':
+      return { type: 'production' };
     default:
       return undefined;
   }
@@ -147,7 +149,11 @@ export function createSession(options: SessionOptions): AgentConsoleSession {
     view.renderEquipment(equipmentSummary(id));
   };
 
-  async function processEffect(effect: Effect): Promise<void> {
+  async function processEffect(
+    effect: Effect,
+    currentRun: string,
+    signal: AbortSignal,
+  ): Promise<void> {
     if (effect.type !== 'execute-tool') return;
     const command = commandForTool(effect.name, effect.args);
     if (!command) {
@@ -159,7 +165,25 @@ export function createSession(options: SessionOptions): AgentConsoleSession {
       });
       return;
     }
-    const result = await scene.execute(command);
+    const publishCancelled = (): void => {
+      if (disposed) return;
+      local({
+        type: '@local/tool-result',
+        toolCallId: effect.toolCallId,
+        cancelled: true,
+        result: { ok: false, cancelled: true },
+      });
+    };
+    if (signal.aborted) {
+      publishCancelled();
+      return;
+    }
+    const result = await scene.execute(command, signal);
+    if (signal.aborted) {
+      publishCancelled();
+      return;
+    }
+    if (disposed || runId !== currentRun) return;
     local({
       type: '@local/tool-result',
       toolCallId: effect.toolCallId,
@@ -180,7 +204,8 @@ export function createSession(options: SessionOptions): AgentConsoleSession {
     const trimmed = text.trim();
     if (!trimmed || disposed) return;
     abort?.abort();
-    abort = new AbortController();
+    const runAbort = new AbortController();
+    abort = runAbort;
     const currentRun = `run-${++sequence}`;
     runId = currentRun;
     const userId = `user-${currentRun}`;
@@ -235,7 +260,7 @@ export function createSession(options: SessionOptions): AgentConsoleSession {
           );
           publish(reduction.state);
           for (const effect of reduction.effects) {
-            pending.push(processEffect(effect));
+            pending.push(processEffect(effect, currentRun, runAbort.signal));
           }
         },
         onError: (error) => {
@@ -244,12 +269,11 @@ export function createSession(options: SessionOptions): AgentConsoleSession {
         },
         onDone: () => {
           if (runId !== currentRun) return;
-          runId = null;
         },
-      }, abort.signal);
+      }, runAbort.signal);
       await Promise.all(pending);
     } catch (error) {
-      if (!abort.signal.aborted && runId === currentRun) {
+      if (!runAbort.signal.aborted && runId === currentRun) {
         local({
           type: '@local/error',
           message: error instanceof Error ? error.message : String(error),

@@ -217,7 +217,9 @@ export class ChatPanel {
     const element = this.element.ownerDocument.createElement('article');
     element.className = 'tool-status';
     const label = item.name.replaceAll('_', ' ');
-    element.textContent = item.parseError
+    element.textContent = item.cancelled
+      ? `${label} 已取消`
+      : item.parseError
       ? `${label} 参数无效：${item.parseError}`
       : item.status === 'result'
         ? `${label} 已完成`

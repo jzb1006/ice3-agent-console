@@ -137,6 +137,97 @@ test('routes a complete scene tool call to the controller', async () => {
   expect(session.state.status).toBe('idle');
 });
 
+test('clears the busy state after an asynchronous scene tool completes', async () => {
+  let release!: () => void;
+  const scene = new FakeScene();
+  scene.execute = async () => {
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    return {
+      ok: true,
+      selectionIds: [],
+      message: '整车生产流已完成',
+    };
+  };
+  const view = new FakeView();
+  const session = createSession({
+    transport: scriptedTransport(),
+    scene,
+    view,
+    threadId: 'thread-1',
+  });
+
+  const pending = session.send('播放整车生产流');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(view.busyStates.at(-1)).toBe(true);
+  release();
+  await pending;
+  expect(view.busyStates.at(-1)).toBe(false);
+});
+
+test('marks a cancelled asynchronous scene tool instead of publishing its stale result', async () => {
+  let release!: () => void;
+  let transportCalls = 0;
+  const scene = new FakeScene();
+  scene.execute = async () => {
+    await new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    return {
+      ok: true,
+      selectionIds: ['ice3-virtual-auto-plant/equipment/ROBOT-201'],
+      message: '旧动画已完成',
+    };
+  };
+  const transport: RunTransport = async (_request, handlers) => {
+    transportCalls += 1;
+    if (transportCalls === 1) {
+      handlers.onEvent({
+        type: EventType.RUN_STARTED,
+        threadId: 'thread-1',
+        runId: 'run-1',
+      });
+      handlers.onEvent({
+        type: EventType.TOOL_CALL_START,
+        toolCallId: 'tool-1',
+        toolCallName: 'play_production',
+      });
+      handlers.onEvent({
+        type: EventType.TOOL_CALL_ARGS,
+        toolCallId: 'tool-1',
+        delta: '{}',
+      });
+      handlers.onEvent({
+        type: EventType.TOOL_CALL_END,
+        toolCallId: 'tool-1',
+      });
+      handlers.onDone?.();
+    }
+  };
+  const session = createSession({
+    transport,
+    scene,
+    view: new FakeView(),
+    threadId: 'thread-1',
+  });
+
+  const first = session.send('播放整车生产流');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const second = session.send('查看整厂');
+  release();
+  await Promise.all([first, second]);
+
+  const cancelled = session.state.items.find((item) => item.id === 'tool-1');
+  expect(cancelled).toMatchObject({
+    kind: 'tool',
+    status: 'result',
+    cancelled: true,
+  });
+  expect((cancelled as { readonly result?: { readonly cancelled?: boolean } }).result?.cancelled)
+    .toBe(true);
+});
+
 test('clears the equipment card after returning to overview', async () => {
   const view = new FakeView();
   const session = createSession({

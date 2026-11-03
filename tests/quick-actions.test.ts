@@ -18,7 +18,7 @@ test('renders all grouped built-in scenarios above the composer', () => {
     '质量与物流',
     '快速操作',
   ]);
-  expect(navigation.querySelectorAll('button')).toHaveLength(6);
+  expect(navigation.querySelectorAll('button')).toHaveLength(7);
 
   [...navigation.querySelectorAll<HTMLButtonElement>('button')]
     .find((button) => button.textContent === '车身焊装')!

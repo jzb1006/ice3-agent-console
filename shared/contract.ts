@@ -5,6 +5,7 @@ export const SCENE_TOOLS = Object.freeze([
   'highlight_equipment',
   'set_camera_view',
   'clear_scene_focus',
+  'play_production',
 ] as const);
 
 export type SceneToolName = (typeof SCENE_TOOLS)[number];

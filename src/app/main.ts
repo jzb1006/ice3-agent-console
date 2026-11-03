@@ -79,6 +79,9 @@ export async function startConsole(host: HTMLElement): Promise<void> {
     const scene = await createSceneController({
       stage: stage.element,
       visibleViewport: visibleSceneViewport,
+      onProductionStage: (selectionId) => {
+        session?.setSelectedEquipment(selectionId);
+      },
       onUserCameraIntent: () => session?.notifyUserSceneIntent(),
     });
     session = createSession({

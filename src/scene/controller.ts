@@ -5,7 +5,10 @@ import type { EquipmentRecord, ScenePort } from './types.js';
 export class SceneCommandExecutor {
   constructor(private readonly scene: ScenePort) {}
 
-  async execute(command: SceneCommand): Promise<SceneCommandResult> {
+  async execute(
+    command: SceneCommand,
+    signal?: AbortSignal,
+  ): Promise<SceneCommandResult> {
     const catalog = createEquipmentCatalog(this.scene.records());
     const ids = [...new Set(command.selectionIds ?? [])];
     const selected = this.resolveSelection(ids);
@@ -62,6 +65,20 @@ export class SceneCommandExecutor {
           ok: true,
           selectionIds: [],
           message: '已清除设备聚焦并返回全厂视角',
+        };
+      case 'production':
+        if (!this.scene.playProduction) {
+          return {
+            ok: false,
+            selectionIds: [],
+            message: '当前场景不支持整车生产流动画',
+          };
+        }
+        await this.scene.playProduction(signal);
+        return {
+          ok: true,
+          selectionIds: this.scene.snapshot().selectedIds,
+          message: '整车生产流已完成，车辆已驶出成品物流月台',
         };
     }
   }

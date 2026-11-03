@@ -20,6 +20,7 @@ class FakeScene {
   }];
   selection: readonly string[] = [];
   cameraMoves = 0;
+  productionRuns = 0;
   view: CameraView = 'overview';
 
   records(): readonly EquipmentRecord[] {
@@ -38,6 +39,10 @@ class FakeScene {
   async setView(view: CameraView): Promise<void> {
     this.cameraMoves += 1;
     this.view = view;
+  }
+
+  async playProduction(): Promise<void> {
+    this.productionRuns += 1;
   }
 
   snapshot(): SceneSnapshot {
@@ -76,4 +81,13 @@ test('focuses and clears a known device', async () => {
   expect(cleared.ok).toBe(true);
   expect(scene.selection).toEqual([]);
   expect(scene.view).toBe('overview');
+});
+
+test('plays the production flow through the scene port', async () => {
+  const scene = new FakeScene();
+  const executor = new SceneCommandExecutor(scene);
+  const result = await executor.execute({ type: 'production' });
+
+  expect(result.ok).toBe(true);
+  expect(scene.productionRuns).toBe(1);
 });

@@ -122,6 +122,7 @@ export const FACTORY_QUICK_ACTION_GROUPS: readonly FactoryQuickActionGroup[] = O
     label: '快速操作',
     actions: Object.freeze([
       { id: 'overview', label: '查看整厂', prompt: '带我看一下整个汽车制造工厂' },
+      { id: 'production-run', label: '整车生产流', prompt: '播放从材料到整车出厂的生产流' },
       { id: 'clear', label: '清除聚焦', prompt: '清除当前聚焦并回到整厂总览' },
     ]),
   }),

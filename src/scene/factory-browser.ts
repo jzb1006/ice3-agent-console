@@ -4,6 +4,7 @@ import {
   ICEBoxGeometry,
   ICEOrbitController,
   ICEPerspectiveCamera,
+  ICENode,
   ICEMesh,
   ICEScene,
 } from 'ice3';
@@ -38,6 +39,7 @@ interface BrowserSceneOptions {
   readonly stage: HTMLElement;
   readonly visibleViewport?: () => ScreenRect;
   readonly onSelection?: (ids: readonly string[]) => void;
+  readonly onProductionStage?: (selectionId: string | null) => void;
   readonly onUserCameraIntent?: () => void;
 }
 
@@ -102,6 +104,65 @@ function addFactoryDecor(scene: ICEScene): void {
   scene.addChild(mesh('safety-lane-right', [62, 0.04, 0.18], [8, -0.56, 5.2], '#d7b84c', { edgeColor: '#ffe994' }));
 }
 
+export function addBodyLoadingStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+): void {
+  const [x, y, z] = item.position;
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    scene.addChild(mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      {
+        selectionId: item.selectionId,
+        edgeColor,
+      },
+    ));
+  };
+
+  // The loading station is modeled as a compact assembly so its selection
+  // remains one business node while the visual parts explain the process.
+  part('pallet', [3.7, 0.18, 4.35], [0, -0.96, 0], '#253b43', '#739391');
+  part('pallet-rail-near', [3.45, 0.16, 0.18], [0, -0.77, -1.78], '#d1a83d', '#ffe68b');
+  part('pallet-rail-far', [3.45, 0.16, 0.18], [0, -0.77, 1.78], '#d1a83d', '#ffe68b');
+
+  part('body-front', [0.58, 0.68, 2.35], [-1.28, -0.55, 0], '#9fb8b8', '#effff7');
+  part('body-rear', [0.58, 0.68, 2.35], [1.28, -0.55, 0], '#91aaa9', '#effff7');
+  part('cabin', [1.5, 0.62, 1.65], [-0.18, -0.12, 0], '#456f78', '#a9e2d3');
+  part('windshield', [0.16, 0.38, 1.42], [-0.96, -0.08, 0], '#79b5b8', '#d4fff3');
+  part('rear-glass', [0.16, 0.32, 1.36], [0.62, -0.06, 0], '#6da3a9', '#c5f5eb');
+
+  const locatorOffsets: readonly (readonly [number, number])[] = [
+    [-1.45, -1.3],
+    [-1.45, 1.3],
+    [1.45, -1.3],
+    [1.45, 1.3],
+  ];
+  locatorOffsets.forEach(([offsetX, offsetZ], index) => {
+    part(`locator-${index}`, [0.18, 0.82, 0.18], [offsetX, -0.25, offsetZ], '#c8783e', '#ffd3a6');
+    part(`locator-pad-${index}`, [0.34, 0.12, 0.34], [offsetX, 0.18, offsetZ], '#e0ad45', '#ffe9a3');
+  });
+
+  part('gantry-left', [0.2, 1.75, 0.2], [-1.82, 0.02, -1.95], '#566f73', '#c5ded5');
+  part('gantry-right', [0.2, 1.75, 0.2], [1.82, 0.02, -1.95], '#566f73', '#c5ded5');
+  part('gantry-beam', [3.8, 0.2, 0.2], [0, 0.88, -1.95], '#667e80', '#d7eee3');
+  part('safety-post-near', [0.22, 0.92, 0.22], [-1.9, -0.38, -2.25], '#d1a83d', '#ffe68b');
+  part('safety-post-far', [0.22, 0.92, 0.22], [1.9, -0.38, 2.25], '#d1a83d', '#ffe68b');
+
+  part('status-pole', [0.1, 0.78, 0.1], [1.65, 0.18, -2.02], '#a9c2bb', '#dffff3');
+  part('status-red', [0.24, 0.18, 0.24], [1.65, 0.67, -2.02], '#b94d4d', '#ffaaa0');
+  part('status-yellow', [0.24, 0.18, 0.24], [1.65, 0.43, -2.02], '#d6aa3f', '#ffe793');
+  part('status-green', [0.24, 0.18, 0.24], [1.65, 0.19, -2.02], '#54b58b', '#b1f5d1');
+}
+
 function addFactoryEquipment(scene: ICEScene): readonly EquipmentRecord[] {
   const records: EquipmentRecord[] = [];
   for (const item of FACTORY_EQUIPMENT) {
@@ -117,20 +178,236 @@ function addFactoryEquipment(scene: ICEScene): readonly EquipmentRecord[] {
       }),
     });
     records.push(record);
-    scene.addChild(mesh(
-      `equipment-${item.tag}`,
-      item.size,
-      item.position,
-      item.color,
-      {
-        displayName: item.name,
-        selectionId: item.selectionId,
-        metadata: record.metadata,
-        edgeColor: '#d0f2e4',
-      },
-    ));
+    if (item.tag === 'BODY-101') {
+      addBodyLoadingStation(scene, item);
+      scene.addChild(mesh(
+        `equipment-${item.tag}`,
+        [2.25, 0.42, 2.15],
+        [item.position[0], item.position[1] - 0.72, item.position[2]],
+        item.color,
+        {
+          displayName: item.name,
+          selectionId: item.selectionId,
+          metadata: record.metadata,
+          edgeColor: '#effff7',
+        },
+      ));
+    } else {
+      scene.addChild(mesh(
+        `equipment-${item.tag}`,
+        item.size,
+        item.position,
+        item.color,
+        {
+          displayName: item.name,
+          selectionId: item.selectionId,
+          metadata: record.metadata,
+          edgeColor: '#d0f2e4',
+        },
+      ));
+    }
   }
   return Object.freeze(records);
+}
+
+type ProductionVisual = 'material' | 'body' | 'paint' | 'assembly' | 'complete';
+
+interface ProductionStage {
+  readonly tag?: string;
+  readonly startX: number;
+  readonly endX: number;
+  readonly durationMs: number;
+  readonly visual: ProductionVisual;
+}
+
+interface ProductionVehicle {
+  readonly root: ICENode;
+  readonly material: ICEMesh;
+  readonly rawShell: ICEMesh;
+  readonly paintedShell: ICEMesh;
+  readonly cabin: ICEMesh;
+  readonly glass: ICEMesh;
+  readonly wheels: readonly ICEMesh[];
+  readonly details: readonly ICEMesh[];
+}
+
+function translationMatrix(x: number): readonly [
+  number, number, number, number,
+  number, number, number, number,
+  number, number, number, number,
+  number, number, number, number,
+] {
+  return [
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    x, 0, 0, 1,
+  ];
+}
+
+function createProductionVehicle(scene: ICEScene): ProductionVehicle {
+  const root = new ICENode({
+    id: 'production-run-vehicle',
+    displayName: '整车生产流车辆',
+  });
+  const material = mesh(
+    'production-material-coil',
+    [1.4, 0.75, 1.4],
+    [0, 0.45, 0],
+    '#a9b7b2',
+    { edgeColor: '#f1fff7' },
+  );
+  const rawShell = mesh(
+    'production-raw-shell',
+    [3.7, 0.78, 1.85],
+    [0, 0.55, 0],
+    '#82979a',
+    { edgeColor: '#d5ebe4' },
+  );
+  const paintedShell = mesh(
+    'production-painted-shell',
+    [3.7, 0.78, 1.85],
+    [0, 0.55, 0],
+    '#2f7891',
+    { edgeColor: '#b5f2e5' },
+  );
+  const cabin = mesh(
+    'production-cabin',
+    [1.65, 0.7, 1.55],
+    [-0.18, 1.2, 0],
+    '#24505e',
+    { edgeColor: '#a8e8df' },
+  );
+  const glass = mesh(
+    'production-glass',
+    [0.12, 0.4, 1.35],
+    [-0.98, 1.18, 0],
+    '#8ed5d1',
+    { edgeColor: '#e0fff8' },
+  );
+  const wheels = [-1.25, 1.25].flatMap((x) => (
+    [-0.92, 0.92].map((z, index) => mesh(
+      `production-wheel-${x}-${index}`,
+      [0.42, 0.46, 0.28],
+      [x, 0.18, z],
+      '#1b2528',
+      { edgeColor: '#78908f' },
+    ))
+  ));
+  const details = [
+    mesh('production-front-bumper', [0.18, 0.34, 1.75], [-1.88, 0.48, 0], '#d5b34c', { edgeColor: '#fff2a6' }),
+    mesh('production-roof-light', [0.3, 0.12, 0.3], [0.36, 1.66, -0.3], '#55c38d', { edgeColor: '#c6ffe1' }),
+  ];
+  root.addChild(material);
+  root.addChild(rawShell);
+  root.addChild(paintedShell);
+  root.addChild(cabin);
+  root.addChild(glass);
+  wheels.forEach((wheel) => root.addChild(wheel));
+  details.forEach((detail) => root.addChild(detail));
+  const vehicle = {
+    root,
+    material,
+    rawShell,
+    paintedShell,
+    cabin,
+    glass,
+    wheels,
+    details,
+  } satisfies ProductionVehicle;
+  setProductionVisual(vehicle, 'material');
+  root.setLocalMatrix(translationMatrix(-30));
+  scene.addChild(root);
+  return vehicle;
+}
+
+function setProductionVisual(vehicle: ProductionVehicle, visual: ProductionVisual): void {
+  vehicle.material.visible = visual === 'material';
+  vehicle.rawShell.visible = visual === 'body';
+  vehicle.paintedShell.visible = ['paint', 'assembly', 'complete'].includes(visual);
+  vehicle.cabin.visible = ['paint', 'assembly', 'complete'].includes(visual);
+  vehicle.glass.visible = ['assembly', 'complete'].includes(visual);
+  vehicle.wheels.forEach((wheel) => {
+    wheel.visible = ['assembly', 'complete'].includes(visual);
+  });
+  vehicle.details.forEach((detail) => {
+    detail.visible = visual === 'complete';
+  });
+}
+
+function createProductionAnimation(
+  engine: ICE3,
+  vehicle: ProductionVehicle,
+  findSelectionId: (tag: string) => string | undefined,
+  onStage: (selectionId: string | null) => void,
+): { play(signal?: AbortSignal): Promise<void>; cancel(): void; dispose(): void } {
+  const stages: readonly ProductionStage[] = [
+    { startX: -30, endX: -23, durationMs: 850, visual: 'material' },
+    { tag: 'BODY-101', startX: -23, endX: -18, durationMs: 850, visual: 'body' },
+    { tag: 'CONV-101', startX: -18, endX: -12, durationMs: 850, visual: 'body' },
+    { tag: 'WELD-201', startX: -12, endX: -5, durationMs: 900, visual: 'body' },
+    { tag: 'PAINT-301', startX: -5, endX: 2, durationMs: 900, visual: 'paint' },
+    { tag: 'OVEN-302', startX: 2, endX: 8, durationMs: 850, visual: 'paint' },
+    { tag: 'TRIM-401', startX: 8, endX: 17, durationMs: 1_000, visual: 'assembly' },
+    { tag: 'QA-501', startX: 17, endX: 29, durationMs: 1_000, visual: 'complete' },
+    { tag: 'LOGI-701', startX: 29, endX: 38, durationMs: 950, visual: 'complete' },
+  ];
+  let active: AbortController | null = null;
+  let disposed = false;
+
+  const sleep = (milliseconds: number): Promise<void> => new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+
+  const play = async (externalSignal?: AbortSignal): Promise<void> => {
+    if (disposed) return;
+    active?.abort();
+    const controller = new AbortController();
+    active = controller;
+    const abortFromOutside = (): void => controller.abort();
+    externalSignal?.addEventListener('abort', abortFromOutside, { once: true });
+    vehicle.root.visible = true;
+    setProductionVisual(vehicle, 'material');
+    vehicle.root.setLocalMatrix(translationMatrix(stages[0]!.startX));
+    onStage(null);
+
+    try {
+      for (const stage of stages) {
+        if (controller.signal.aborted || disposed) return;
+        setProductionVisual(vehicle, stage.visual);
+        onStage(stage.tag ? findSelectionId(stage.tag) ?? null : null);
+        const startedAt = performance.now();
+        while (true) {
+          if (controller.signal.aborted || disposed) return;
+          const progress = Math.min(1, (performance.now() - startedAt) / stage.durationMs);
+          const eased = progress * progress * (3 - 2 * progress);
+          vehicle.root.setLocalMatrix(translationMatrix(
+            stage.startX + (stage.endX - stage.startX) * eased,
+          ));
+          engine.requestRender('production-animation');
+          if (progress >= 1) break;
+          await sleep(16);
+        }
+      }
+    } finally {
+      externalSignal?.removeEventListener('abort', abortFromOutside);
+      if (active === controller) active = null;
+    }
+  };
+
+  return {
+    play,
+    cancel(): void {
+      active?.abort();
+      active = null;
+    },
+    dispose(): void {
+      disposed = true;
+      active?.abort();
+      active = null;
+      vehicle.root.dispose();
+    },
+  };
 }
 
 function center(bounds: ICEGeometryBoundsLike): readonly [number, number, number] {
@@ -157,6 +434,10 @@ export async function createFactorySceneController(
   const scene = new ICEScene({ id: 'automotive-factory-scene' });
   addFactoryDecor(scene);
   const records = addFactoryEquipment(scene);
+  const productionVehicle = createProductionVehicle(scene);
+  const selectionIdForTag = (tag: string): string | undefined => (
+    records.find((record) => record.metadata?.equipmentTag === tag)?.selectionId
+  );
   const selectableIds = new Set(records.map(({ selectionId }) => selectionId));
   const camera = new ICEPerspectiveCamera({
     id: 'agent-console-camera',
@@ -258,6 +539,16 @@ export async function createFactorySceneController(
     selectionBlink?.cancel(restore);
     selectionBlink = null;
   };
+  const productionAnimation = createProductionAnimation(
+    engine,
+    productionVehicle,
+    selectionIdForTag,
+    (selectionId) => {
+      logicalSelection = selectionId ? [selectionId] : [];
+      applyProgrammaticSelection(logicalSelection);
+      options.onProductionStage?.(selectionId);
+    },
+  );
 
   const port = {
     records: () => records,
@@ -283,6 +574,13 @@ export async function createFactorySceneController(
     async setView(next: CameraView): Promise<void> {
       await setView(next);
     },
+    async playProduction(signal?: AbortSignal): Promise<void> {
+      stopSelectionBlink(false);
+      if (signal?.aborted) return;
+      await setView('overview');
+      if (signal?.aborted) return;
+      await productionAnimation.play(signal);
+    },
     snapshot(): SceneSnapshot {
       return {
         selectedIds: logicalSelection,
@@ -295,6 +593,7 @@ export async function createFactorySceneController(
   const executor = new SceneCommandExecutor(port);
   const cancelAgentMotion = (): void => {
     stopSelectionBlink();
+    productionAnimation.cancel();
     motion?.abort();
     motion = null;
     for (const listener of intentListeners) listener();
@@ -322,9 +621,10 @@ export async function createFactorySceneController(
     setSelection: port.setSelection,
     focus: port.focus,
     setView: port.setView,
+    playProduction: port.playProduction,
     snapshot: port.snapshot,
-    execute(command: SceneCommand): Promise<SceneCommandResult> {
-      return executor.execute(command);
+    execute(command: SceneCommand, signal?: AbortSignal): Promise<SceneCommandResult> {
+      return executor.execute(command, signal);
     },
     onSelection(listener) {
       selectionListeners.add(listener);
@@ -341,6 +641,7 @@ export async function createFactorySceneController(
       if (disposed) return;
       disposed = true;
       stopSelectionBlink(false);
+      productionAnimation.dispose();
       motion?.abort();
       orbit.dispose();
       engine.destroy();

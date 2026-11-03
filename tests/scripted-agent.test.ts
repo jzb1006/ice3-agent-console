@@ -29,6 +29,20 @@ test('returns a deterministic overview tool sequence', async () => {
   expect(events.at(-1)?.type).toBe(EventType.RUN_FINISHED);
 });
 
+test('starts the complete production flow from a natural-language request', async () => {
+  const events = [];
+  for await (const event of createScriptedAgent({ delayMs: 0 }).run(
+    input('播放从材料到整车出厂的生产流'),
+  )) {
+    events.push(event);
+  }
+
+  expect(events.some((event) => (
+    event.type === EventType.TOOL_CALL_START
+    && event.toolCallName === 'play_production'
+  ))).toBe(true);
+});
+
 test('plays a multi-stop guided tour for opening autoplay', async () => {
   const request = input('带我看一下整个汽车制造工厂');
   request.context = [{

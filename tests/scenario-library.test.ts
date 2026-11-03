@@ -23,6 +23,7 @@ test('publishes the confirmed quick-action groups and script order', () => {
     '总装流程',
     '质量检测',
     '查看整厂',
+    '整车生产流',
     '清除聚焦',
   ]);
 });

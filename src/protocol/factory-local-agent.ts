@@ -43,6 +43,12 @@ export function factoryScriptedPlan(input: RunAgentInput): readonly TextStream[]
   const selected = selectedEquipment(input);
   if (presentationMode(input) === 'guided-tour' && includesAny(text, ['整个汽车', '汽车制造工厂', '整厂'])) return OPENING_TOUR;
   if (includesAny(text, ['清除', '复位', '回到整厂', '回到全厂', '回到总览'])) return [{ text: '好的，已清除设备聚焦并回到整厂总览。', tool: { name: 'clear_scene_focus', args: {} } }];
+  if (includesAny(text, ['整车生产流', '生产流', '材料到整车', '整车出厂'])) {
+    return [{
+      text: '开始播放从原材料进入、车身焊装、涂装总装到整车出厂的完整生产流。',
+      tool: { name: 'play_production', args: {} },
+    }];
+  }
   if (includesAny(text, ['这个设备', '这台设备', '当前设备'])) {
     if (!selected) return [{ text: '请先在三维场景中选择一台设备。' }];
     return [

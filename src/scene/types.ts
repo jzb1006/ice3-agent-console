@@ -29,11 +29,12 @@ export interface ScenePort {
   setSelection(ids: readonly string[]): void;
   focus(bounds: ICEGeometryBoundsLike): Promise<void>;
   setView(view: CameraView): Promise<void>;
+  readonly playProduction?: (signal?: AbortSignal) => Promise<void>;
   snapshot(): SceneSnapshot;
 }
 
 export interface SceneController extends ScenePort {
-  execute(command: SceneCommand): Promise<SceneCommandResult>;
+  execute(command: SceneCommand, signal?: AbortSignal): Promise<SceneCommandResult>;
   onSelection(listener: (ids: readonly string[]) => void): () => void;
   onUserCameraIntent(listener: () => void): () => void;
   whenReady(): Promise<void>;
