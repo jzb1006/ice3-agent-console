@@ -43,8 +43,14 @@ interface BrowserSceneOptions {
   readonly onUserCameraIntent?: () => void;
 }
 
-function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLike {
+export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLike {
   const [x, y, z] = item.position;
+  if (item.tag === 'CONV-101') {
+    return {
+      min: [x - 2.8, y - 1.55, z - 2.35],
+      max: [x + 2.8, y + 1.25, z + 2.35],
+    };
+  }
   const [width, height, depth] = item.size;
   return {
     min: [x - width / 2, y - height / 2, z - depth / 2],
@@ -163,6 +169,62 @@ export function addBodyLoadingStation(
   part('status-green', [0.24, 0.18, 0.24], [1.65, 0.19, -2.02], '#54b58b', '#b1f5d1');
 }
 
+export function addMainConveyorStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+): void {
+  const [x, y, z] = item.position;
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    scene.addChild(mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      {
+        selectionId: item.selectionId,
+        edgeColor,
+      },
+    ));
+  };
+
+  // The line segment is a selectable assembly: every visible part keeps the
+  // same business identity while the rollers and guarding explain its role.
+  part('bed-frame', [5.25, 0.24, 3.55], [0, -0.16, 0], '#314b54', '#789b98');
+  part('bed-top', [5.05, 0.12, 3.2], [0, 0.06, 0], '#9eb7b2', '#e2fff4');
+  [-2, -1, 0, 1, 2].forEach((offsetX, index) => {
+    part(`roller-${index}`, [0.34, 0.18, 3.05], [offsetX, 0.22, 0], '#c4d4cf', '#f1fff8');
+  });
+  part('guard-near', [5.1, 0.42, 0.18], [0, 0.42, -1.66], '#be9d42', '#ffe89a');
+  part('guard-far', [5.1, 0.42, 0.18], [0, 0.42, 1.66], '#be9d42', '#ffe89a');
+  part('drive-motor', [0.82, 0.72, 0.82], [1.95, -0.72, -1.82], '#506a72', '#c4e6dc');
+  part('drive-coupler', [0.28, 0.28, 1.1], [1.52, -0.28, -1.08], '#d0a640', '#ffeb9b');
+
+  const supportOffsets: readonly (readonly [number, number])[] = [
+    [-2.05, -1.38],
+    [-2.05, 1.38],
+    [2.05, -1.38],
+    [2.05, 1.38],
+  ];
+  supportOffsets.forEach(([offsetX, offsetZ], index) => {
+    part(`support-${index}`, [0.24, 1.22, 0.24], [offsetX, -0.84, offsetZ], '#39545a', '#83a8a0');
+    part(`support-foot-${index}`, [0.48, 0.12, 0.48], [offsetX, -1.45, offsetZ], '#6f8987', '#b8d8ce');
+  });
+
+  part('entry-sensor-left', [0.12, 0.95, 0.12], [-2.36, 0.66, -1.36], '#6b8886', '#bde5d9');
+  part('entry-sensor-right', [0.12, 0.95, 0.12], [-2.36, 0.66, 1.36], '#6b8886', '#bde5d9');
+  part('entry-sensor-beam', [0.12, 0.12, 2.84], [-2.36, 1.12, 0], '#71918d', '#c9eee2');
+  part('status-pole', [0.12, 0.9, 0.12], [1.88, 0.72, 1.92], '#6d8784', '#c4e6da');
+  part('status-red', [0.26, 0.18, 0.26], [1.88, 1.25, 1.92], '#bf4e4a', '#ffaaa0');
+  part('status-yellow', [0.26, 0.18, 0.26], [1.88, 1.01, 1.92], '#d5a83e', '#ffe99a');
+  part('status-green', [0.26, 0.18, 0.26], [1.88, 0.77, 1.92], '#54b58b', '#b1f5d1');
+}
+
 function addFactoryEquipment(scene: ICEScene): readonly EquipmentRecord[] {
   const records: EquipmentRecord[] = [];
   for (const item of FACTORY_EQUIPMENT) {
@@ -192,6 +254,8 @@ function addFactoryEquipment(scene: ICEScene): readonly EquipmentRecord[] {
           edgeColor: '#effff7',
         },
       ));
+    } else if (item.tag === 'CONV-101') {
+      addMainConveyorStation(scene, item);
     } else {
       scene.addChild(mesh(
         `equipment-${item.tag}`,
