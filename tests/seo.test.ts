@@ -9,7 +9,7 @@ const read = (path: string): string => readFileSync(join(root, path), 'utf8');
 const html = read('public/index.html');
 const robots = read('public/robots.txt');
 const sitemap = read('public/sitemap.xml');
-const canonical = 'https://ice-3d.github.io/ice3-agent-console/';
+const canonical = 'https://jzb1006.github.io/ice3-agent-console/';
 
 function meta(kind: string, key: string): string | undefined {
   const pattern = new RegExp(

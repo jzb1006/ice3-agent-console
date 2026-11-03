@@ -6,14 +6,14 @@
 >
 > Owner: ICE3 Agent Console maintainers
 
-[![ICE3 汽车制造工厂 3D Agent Console 在线演示](public/og-cover.jpg)](https://ice-3d.github.io/ice3-agent-console/)
+[![ICE3 汽车制造工厂 3D Agent Console 在线演示](public/og-cover.jpg)](https://jzb1006.github.io/ice3-agent-console/)
 
 ICE3 Agent Console 展示对话式 Agent 如何通过一组小而严格的工具接口操作工业 3D
 Scene。当前版本是一座由 ICE3 前端参数化生成的虚拟汽车制造工厂。
 
 应用支持确定性的浏览器本地 Agent；对话和 Scene 状态更新时，3D 舞台始终保持挂载。
 
-在线演示：<https://ice-3d.github.io/ice3-agent-console/>
+在线演示：<https://jzb1006.github.io/ice3-agent-console/>
 
 所有内置 autoplay、快捷操作和脚本 Agent 都针对这座虚拟汽车制造工厂。其它已获准使用的
 3D 模型应按
@@ -43,7 +43,7 @@ Scene。当前版本是一座由 ICE3 前端参数化生成的虚拟汽车制造
 
 | Agent 工艺巡游 | 聚焦设备 |
 |---|---|
-| [![Agent 正在讲解汽车制造流水线，右侧显示对话和工位信息](docs/images/readme-agent-tour.jpg)](https://ice-3d.github.io/ice3-agent-console/) | [![收起对话面板后查看聚焦的汽车制造设备与工位信息浮层](docs/images/readme-scene-focus.jpg)](https://ice-3d.github.io/ice3-agent-console/) |
+| [![Agent 正在讲解汽车制造流水线，右侧显示对话和工位信息](docs/images/readme-agent-tour.jpg)](https://jzb1006.github.io/ice3-agent-console/) | [![收起对话面板后查看聚焦的汽车制造设备与工位信息浮层](docs/images/readme-scene-focus.jpg)](https://jzb1006.github.io/ice3-agent-console/) |
 
 左图展示 Agent 按工艺段自动移动镜头并讲解设备；右图展示收起对话面板后的聚焦场景。
 两张图均来自版本库中的虚拟汽车制造工厂示例。

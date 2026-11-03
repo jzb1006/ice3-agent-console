@@ -31,7 +31,7 @@ npx http-server dist -p 8111 -c-1
 线上演示地址：
 
 ```text
-https://ice-3d.github.io/ice3-agent-console/
+https://jzb1006.github.io/ice3-agent-console/
 ```
 
 仓库使用 [Deploy demo to Pages](../../.github/workflows/deploy-pages.yml) 在 `main`
@@ -70,7 +70,7 @@ GitHub Pages 只提供静态文件，没有 `8099` Agent service。线上应使�
 canonical 与 sitemap 的正式地址均为：
 
 ```text
-https://ice-3d.github.io/ice3-agent-console/
+https://jzb1006.github.io/ice3-agent-console/
 ```
 
 访问统计沿用 2D Agent Console 的 GA4 Measurement ID：

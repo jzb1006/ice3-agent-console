@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ice-3d.github.io/ice3-agent-console/sitemap.xml
+Sitemap: https://jzb1006.github.io/ice3-agent-console/sitemap.xml
