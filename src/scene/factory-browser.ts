@@ -113,8 +113,9 @@ function addFactoryDecor(scene: ICEScene): void {
 export function addBodyLoadingStation(
   scene: ICEScene,
   item: FactoryEquipment,
-): void {
+): FactoryStationVisual {
   const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
   const part = (
     suffix: string,
     size: readonly [number, number, number],
@@ -122,7 +123,7 @@ export function addBodyLoadingStation(
     color: string,
     edgeColor = '#cfe7df',
   ): void => {
-    scene.addChild(mesh(
+    const visualPart = mesh(
       `equipment-${item.tag}-${suffix}`,
       size,
       [x + offset[0], y + offset[1], z + offset[2]],
@@ -131,7 +132,9 @@ export function addBodyLoadingStation(
         selectionId: item.selectionId,
         edgeColor,
       },
-    ));
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
   };
 
   // The loading station is modeled as a compact assembly so its selection
@@ -167,13 +170,15 @@ export function addBodyLoadingStation(
   part('status-red', [0.24, 0.18, 0.24], [1.65, 0.67, -2.02], '#b94d4d', '#ffaaa0');
   part('status-yellow', [0.24, 0.18, 0.24], [1.65, 0.43, -2.02], '#d6aa3f', '#ffe793');
   part('status-green', [0.24, 0.18, 0.24], [1.65, 0.19, -2.02], '#54b58b', '#b1f5d1');
+  return { parts };
 }
 
 export function addMainConveyorStation(
   scene: ICEScene,
   item: FactoryEquipment,
-): void {
+): FactoryStationVisual {
   const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
   const part = (
     suffix: string,
     size: readonly [number, number, number],
@@ -181,7 +186,7 @@ export function addMainConveyorStation(
     color: string,
     edgeColor = '#cfe7df',
   ): void => {
-    scene.addChild(mesh(
+    const visualPart = mesh(
       `equipment-${item.tag}-${suffix}`,
       size,
       [x + offset[0], y + offset[1], z + offset[2]],
@@ -190,7 +195,9 @@ export function addMainConveyorStation(
         selectionId: item.selectionId,
         edgeColor,
       },
-    ));
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
   };
 
   // The line segment is a selectable assembly: every visible part keeps the
@@ -223,9 +230,13 @@ export function addMainConveyorStation(
   part('status-red', [0.26, 0.18, 0.26], [1.88, 1.25, 1.92], '#bf4e4a', '#ffaaa0');
   part('status-yellow', [0.26, 0.18, 0.26], [1.88, 1.01, 1.92], '#d5a83e', '#ffe99a');
   part('status-green', [0.26, 0.18, 0.26], [1.88, 0.77, 1.92], '#54b58b', '#b1f5d1');
+  return { parts };
 }
 
-function addFactoryEquipment(scene: ICEScene): readonly EquipmentRecord[] {
+function addFactoryEquipment(
+  scene: ICEScene,
+  stationVisuals: Map<string, FactoryStationVisual>,
+): readonly EquipmentRecord[] {
   const records: EquipmentRecord[] = [];
   for (const item of FACTORY_EQUIPMENT) {
     const record: EquipmentRecord = Object.freeze({
@@ -241,7 +252,7 @@ function addFactoryEquipment(scene: ICEScene): readonly EquipmentRecord[] {
     });
     records.push(record);
     if (item.tag === 'BODY-101') {
-      addBodyLoadingStation(scene, item);
+      stationVisuals.set(item.tag, addBodyLoadingStation(scene, item));
       scene.addChild(mesh(
         `equipment-${item.tag}`,
         [2.25, 0.42, 2.15],
@@ -255,7 +266,7 @@ function addFactoryEquipment(scene: ICEScene): readonly EquipmentRecord[] {
         },
       ));
     } else if (item.tag === 'CONV-101') {
-      addMainConveyorStation(scene, item);
+      stationVisuals.set(item.tag, addMainConveyorStation(scene, item));
     } else {
       scene.addChild(mesh(
         `equipment-${item.tag}`,
@@ -281,6 +292,7 @@ interface ProductionStage {
   readonly startX: number;
   readonly endX: number;
   readonly durationMs: number;
+  readonly holdMs: number;
   readonly visual: ProductionVisual;
 }
 
@@ -295,7 +307,7 @@ interface ProductionVehicle {
   readonly details: readonly ICEMesh[];
 }
 
-function translationMatrix(x: number): readonly [
+function translationMatrix(x: number, y = 0, z = 0): readonly [
   number, number, number, number,
   number, number, number, number,
   number, number, number, number,
@@ -305,8 +317,102 @@ function translationMatrix(x: number): readonly [
     1, 0, 0, 0,
     0, 1, 0, 0,
     0, 0, 1, 0,
-    x, 0, 0, 1,
+    x, y, z, 1,
   ];
+}
+
+function zRotationMatrix(
+  position: readonly [number, number, number],
+  angle: number,
+): readonly [
+  number, number, number, number,
+  number, number, number, number,
+  number, number, number, number,
+  number, number, number, number,
+] {
+  const cosine = Math.cos(angle);
+  const sine = Math.sin(angle);
+  return [
+    cosine, sine, 0, 0,
+    -sine, cosine, 0, 0,
+    0, 0, 1, 0,
+    position[0], position[1], position[2], 1,
+  ];
+}
+
+export interface FactoryStationVisual {
+  readonly parts: ReadonlyMap<string, ICEMesh>;
+}
+
+export interface FactoryStationMotion {
+  update(progress: number): void;
+  reset(): void;
+}
+
+export function createBodyStationMotion(
+  visual: FactoryStationVisual | undefined,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    const green = parts?.get('status-green');
+    const yellow = parts?.get('status-yellow');
+    if (green) green.visible = true;
+    if (yellow) yellow.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const beam = parts.get('gantry-beam');
+      if (beam) {
+        const base = beam.position;
+        const lift = 0.28 * Math.sin(progress * Math.PI * 2);
+        beam.setLocalMatrix(translationMatrix(base.x, base.y + lift, base.z));
+      }
+      for (const [index, suffix] of ['0', '1', '2', '3'].entries()) {
+        const pad = parts.get(`locator-pad-${suffix}`);
+        if (!pad) continue;
+        const base = pad.position;
+        const bob = 0.08 * Math.sin(progress * Math.PI * 2 + index * Math.PI / 2);
+        pad.setLocalMatrix(translationMatrix(base.x, base.y + bob, base.z));
+      }
+      const green = parts.get('status-green');
+      const yellow = parts.get('status-yellow');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+      if (yellow) yellow.visible = !green?.visible;
+    },
+    reset,
+  };
+}
+
+export function createConveyorStationMotion(
+  visual: FactoryStationVisual | undefined,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    const beam = parts?.get('entry-sensor-beam');
+    const green = parts?.get('status-green');
+    if (beam) beam.visible = true;
+    if (green) green.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const angle = progress * Math.PI * 8;
+      for (let index = 0; index < 5; index += 1) {
+        const roller = parts.get(`roller-${index}`);
+        if (!roller) continue;
+        const base = roller.position;
+        roller.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], angle));
+      }
+      const beam = parts.get('entry-sensor-beam');
+      if (beam) beam.visible = Math.sin(progress * Math.PI * 6) >= -0.2;
+      const green = parts.get('status-green');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+    },
+    reset,
+  };
 }
 
 function createProductionVehicle(scene: ICEScene): ProductionVehicle {
@@ -404,20 +510,26 @@ function createProductionAnimation(
   vehicle: ProductionVehicle,
   findSelectionId: (tag: string) => string | undefined,
   onStage: (selectionId: string | null) => void,
+  stationVisuals: ReadonlyMap<string, FactoryStationVisual>,
 ): { play(signal?: AbortSignal): Promise<void>; cancel(): void; dispose(): void } {
   const stages: readonly ProductionStage[] = [
-    { startX: -30, endX: -23, durationMs: 850, visual: 'material' },
-    { tag: 'BODY-101', startX: -23, endX: -18, durationMs: 850, visual: 'body' },
-    { tag: 'CONV-101', startX: -18, endX: -12, durationMs: 850, visual: 'body' },
-    { tag: 'WELD-201', startX: -12, endX: -5, durationMs: 900, visual: 'body' },
-    { tag: 'PAINT-301', startX: -5, endX: 2, durationMs: 900, visual: 'paint' },
-    { tag: 'OVEN-302', startX: 2, endX: 8, durationMs: 850, visual: 'paint' },
-    { tag: 'TRIM-401', startX: 8, endX: 17, durationMs: 1_000, visual: 'assembly' },
-    { tag: 'QA-501', startX: 17, endX: 29, durationMs: 1_000, visual: 'complete' },
-    { tag: 'LOGI-701', startX: 29, endX: 38, durationMs: 950, visual: 'complete' },
+    { startX: -30, endX: -23, durationMs: 1_000, holdMs: 850, visual: 'material' },
+    { tag: 'BODY-101', startX: -23, endX: -18, durationMs: 1_150, holdMs: 1_350, visual: 'body' },
+    { tag: 'CONV-101', startX: -18, endX: -12, durationMs: 1_150, holdMs: 1_350, visual: 'body' },
+    { tag: 'WELD-201', startX: -12, endX: -5, durationMs: 1_000, holdMs: 900, visual: 'body' },
+    { tag: 'PAINT-301', startX: -5, endX: 2, durationMs: 1_000, holdMs: 1_000, visual: 'paint' },
+    { tag: 'OVEN-302', startX: 2, endX: 8, durationMs: 950, holdMs: 900, visual: 'paint' },
+    { tag: 'TRIM-401', startX: 8, endX: 17, durationMs: 1_100, holdMs: 1_100, visual: 'assembly' },
+    { tag: 'QA-501', startX: 17, endX: 29, durationMs: 1_100, holdMs: 1_100, visual: 'complete' },
+    { tag: 'LOGI-701', startX: 29, endX: 38, durationMs: 1_000, holdMs: 1_250, visual: 'complete' },
   ];
+  const stationMotions = new Map<string, FactoryStationMotion>([
+    ['BODY-101', createBodyStationMotion(stationVisuals.get('BODY-101'))],
+    ['CONV-101', createConveyorStationMotion(stationVisuals.get('CONV-101'))],
+  ]);
   let active: AbortController | null = null;
   let disposed = false;
+  let runGeneration = 0;
 
   const sleep = (milliseconds: number): Promise<void> => new Promise((resolve) => {
     setTimeout(resolve, milliseconds);
@@ -426,6 +538,8 @@ function createProductionAnimation(
   const play = async (externalSignal?: AbortSignal): Promise<void> => {
     if (disposed) return;
     active?.abort();
+    runGeneration += 1;
+    const generation = runGeneration;
     const controller = new AbortController();
     active = controller;
     const abortFromOutside = (): void => controller.abort();
@@ -433,11 +547,15 @@ function createProductionAnimation(
     vehicle.root.visible = true;
     setProductionVisual(vehicle, 'material');
     vehicle.root.setLocalMatrix(translationMatrix(stages[0]!.startX));
+    stationMotions.forEach((motion) => motion.reset());
     onStage(null);
 
     try {
       for (const stage of stages) {
         if (controller.signal.aborted || disposed) return;
+        stationMotions.forEach((motion, tag) => {
+          if (tag !== stage.tag) motion.reset();
+        });
         setProductionVisual(vehicle, stage.visual);
         onStage(stage.tag ? findSelectionId(stage.tag) ?? null : null);
         const startedAt = performance.now();
@@ -448,12 +566,24 @@ function createProductionAnimation(
           vehicle.root.setLocalMatrix(translationMatrix(
             stage.startX + (stage.endX - stage.startX) * eased,
           ));
+          if (stage.tag) stationMotions.get(stage.tag)?.update(progress);
           engine.requestRender('production-animation');
           if (progress >= 1) break;
           await sleep(16);
         }
+        const holdStartedAt = performance.now();
+        while (performance.now() - holdStartedAt < stage.holdMs) {
+          if (controller.signal.aborted || disposed) return;
+          const holdProgress = ((performance.now() - holdStartedAt) % 1_200) / 1_200;
+          if (stage.tag) stationMotions.get(stage.tag)?.update(holdProgress);
+          engine.requestRender('production-hold');
+          await sleep(16);
+        }
       }
     } finally {
+      if (generation === runGeneration) {
+        stationMotions.forEach((motion) => motion.reset());
+      }
       externalSignal?.removeEventListener('abort', abortFromOutside);
       if (active === controller) active = null;
     }
@@ -464,12 +594,88 @@ function createProductionAnimation(
     cancel(): void {
       active?.abort();
       active = null;
+      runGeneration += 1;
+      stationMotions.forEach((motion) => motion.reset());
     },
     dispose(): void {
       disposed = true;
       active?.abort();
       active = null;
+      runGeneration += 1;
+      stationMotions.forEach((motion) => motion.reset());
       vehicle.root.dispose();
+    },
+  };
+}
+
+interface StationPreviewAnimation {
+  play(tag: string): void;
+  cancel(): void;
+  dispose(): void;
+}
+
+function createStationPreviewAnimation(
+  engine: ICE3,
+  stationVisuals: ReadonlyMap<string, FactoryStationVisual>,
+): StationPreviewAnimation {
+  const stationMotions = new Map<string, FactoryStationMotion>([
+    ['BODY-101', createBodyStationMotion(stationVisuals.get('BODY-101'))],
+    ['CONV-101', createConveyorStationMotion(stationVisuals.get('CONV-101'))],
+  ]);
+  const durationByTag: ReadonlyMap<string, number> = new Map([
+    ['BODY-101', 1_400],
+    ['CONV-101', 1_400],
+  ]);
+  let active: {
+    readonly controller: AbortController;
+    readonly motion: FactoryStationMotion;
+    timer: ReturnType<typeof setTimeout> | null;
+  } | null = null;
+  let disposed = false;
+
+  const cancel = (): void => {
+    if (!active) return;
+    active.controller.abort();
+    if (active.timer !== null) clearTimeout(active.timer);
+    active.motion.reset();
+    active = null;
+    engine.requestRender('station-preview-cancel');
+  };
+
+  return {
+    play(tag: string): void {
+      const motion = stationMotions.get(tag);
+      const duration = durationByTag.get(tag);
+      if (!motion || duration === undefined || disposed) return;
+      cancel();
+      const run = {
+        controller: new AbortController(),
+        motion,
+        timer: null as ReturnType<typeof setTimeout> | null,
+      };
+      active = run;
+      motion.reset();
+      const startedAt = performance.now();
+      const tick = (): void => {
+        if (disposed || active !== run || run.controller.signal.aborted) return;
+        const progress = Math.min(1, (performance.now() - startedAt) / duration);
+        motion.update(progress);
+        engine.requestRender('station-preview-animation');
+        if (progress >= 1) {
+          motion.reset();
+          active = null;
+          engine.requestRender('station-preview-complete');
+          return;
+        }
+        run.timer = setTimeout(tick, 16);
+      };
+      tick();
+    },
+    cancel,
+    dispose(): void {
+      disposed = true;
+      cancel();
+      stationMotions.forEach((motion) => motion.reset());
     },
   };
 }
@@ -497,7 +703,8 @@ export async function createFactorySceneController(
   engine.setBackgroundColor('#071317');
   const scene = new ICEScene({ id: 'automotive-factory-scene' });
   addFactoryDecor(scene);
-  const records = addFactoryEquipment(scene);
+  const stationVisuals = new Map<string, FactoryStationVisual>();
+  const records = addFactoryEquipment(scene, stationVisuals);
   const productionVehicle = createProductionVehicle(scene);
   const selectionIdForTag = (tag: string): string | undefined => (
     records.find((record) => record.metadata?.equipmentTag === tag)?.selectionId
@@ -612,11 +819,18 @@ export async function createFactorySceneController(
       applyProgrammaticSelection(logicalSelection);
       options.onProductionStage?.(selectionId);
     },
+    stationVisuals,
   );
+  const stationPreviewAnimation = createStationPreviewAnimation(engine, stationVisuals);
+  const tagForSelectionId = (selectionId: string): string | undefined => {
+    const tag = records.find((record) => record.selectionId === selectionId)?.metadata?.equipmentTag;
+    return typeof tag === 'string' ? tag : undefined;
+  };
 
   const port = {
     records: () => records,
     setSelection(ids: readonly string[]): void {
+      stationPreviewAnimation.cancel();
       stopSelectionBlink(false);
       logicalSelection = [...new Set(ids)];
       applyProgrammaticSelection(logicalSelection);
@@ -639,6 +853,7 @@ export async function createFactorySceneController(
       await setView(next);
     },
     async playProduction(signal?: AbortSignal): Promise<void> {
+      stationPreviewAnimation.cancel();
       stopSelectionBlink(false);
       if (signal?.aborted) return;
       await setView('overview');
@@ -658,6 +873,7 @@ export async function createFactorySceneController(
   const cancelAgentMotion = (): void => {
     stopSelectionBlink();
     productionAnimation.cancel();
+    stationPreviewAnimation.cancel();
     motion?.abort();
     motion = null;
     for (const listener of intentListeners) listener();
@@ -671,6 +887,12 @@ export async function createFactorySceneController(
       applyProgrammaticSelection,
     );
     logicalSelection = ids;
+    const selectedTag = ids[0] ? tagForSelectionId(ids[0]) : undefined;
+    if (selectedTag === 'BODY-101' || selectedTag === 'CONV-101') {
+      stationPreviewAnimation.play(selectedTag);
+    } else {
+      stationPreviewAnimation.cancel();
+    }
     for (const listener of selectionListeners) listener(ids);
     options.onSelection?.(ids);
   };
@@ -706,6 +928,7 @@ export async function createFactorySceneController(
       disposed = true;
       stopSelectionBlink(false);
       productionAnimation.dispose();
+      stationPreviewAnimation.dispose();
       motion?.abort();
       orbit.dispose();
       engine.destroy();
