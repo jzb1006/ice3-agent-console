@@ -7,20 +7,20 @@ test('starts a moving guided tour when opened without overrides', async ({
   await expect(page.locator('[data-role="scene-status"]'))
     .toHaveText('场景已就绪', { timeout: 60_000 });
   await expect(page.locator('[data-role="selection-tag"]'))
-    .toHaveText('PS-101-P', { timeout: 10_000 });
+    .toHaveText('BODY-101', { timeout: 10_000 });
   await expect(page.locator('[data-role="selection-tag"]'))
-    .toHaveText('AE-101', { timeout: 10_000 });
+    .toHaveText('ROBOT-201', { timeout: 10_000 });
 });
 
-test('loads the wastewater plant and completes a scene command', async ({
+test('loads the automotive factory and completes a scene command', async ({
   page,
 }) => {
   await page.goto('http://127.0.0.1:8110/?demo=0&autoplay=0');
   await expect(page.locator('[data-role="scene-status"]'))
     .toHaveText('场景已就绪', { timeout: 60_000 });
-  await page.getByRole('button', { name: '二沉池', exact: true }).click();
+  await page.getByRole('button', { name: '车身焊装', exact: true }).click();
   await expect(page.locator('[data-role="selection-tag"]'))
-    .toHaveText('SC-101', { timeout: 10_000 });
+    .toHaveText('WELD-201', { timeout: 10_000 });
 });
 
 test('cancels autoplay when the user interacts with the scene', async ({

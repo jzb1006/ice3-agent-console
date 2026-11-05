@@ -9,7 +9,7 @@ test('renders streamed assistant text and user messages', () => {
   const panel = new ChatPanel(
     dom.window.document.querySelector('main') as unknown as HTMLElement,
   );
-  panel.appendUserMessage('定位二沉池');
+  panel.appendUserMessage('定位点焊机器人');
   const state = {
     ...initialState('thread-1'),
     status: 'running' as const,
@@ -17,16 +17,16 @@ test('renders streamed assistant text and user messages', () => {
       kind: 'text' as const,
       id: 'assistant-1',
       role: 'assistant',
-      text: '正在定位 **二沉池 A**。',
+      text: '正在定位 **点焊机器人**。',
       done: false,
     }],
   };
   panel.render(state);
   panel.setBusy(true);
 
-  expect(panel.element.textContent).toContain('定位二沉池');
-  expect(panel.element.textContent).toContain('二沉池 A');
-  expect(panel.element.querySelector('strong')?.textContent).toBe('二沉池 A');
+  expect(panel.element.textContent).toContain('定位点焊机器人');
+  expect(panel.element.textContent).toContain('点焊机器人');
+  expect(panel.element.querySelector('strong')?.textContent).toBe('点焊机器人');
   expect(panel.submit.disabled).toBe(true);
   expect(panel.stateLabel.textContent).toContain('思考中');
 });
@@ -47,20 +47,20 @@ test('submits a typed message and clears the input', () => {
   expect(panel.input.value).toBe('');
 });
 
-test('supports scene-specific assistant copy without changing the default profile', () => {
+test('supports assistant copy overrides without changing the default profile', () => {
   const dom = new JSDOM('<main></main>');
   const panel = new ChatPanel(
     dom.window.document.querySelector('main') as unknown as HTMLElement,
     {
-      title: '污水处理现场助手',
+      title: '汽车制造现场助手',
       promptPlaceholder: '查看当前设备',
       introPrompt: '选择设备：',
       introExamples: '查看全厂总览 · 讲解工艺连接',
     },
   );
-  expect(panel.element.getAttribute('aria-label')).toBe('污水处理现场助手');
+  expect(panel.element.getAttribute('aria-label')).toBe('汽车制造现场助手');
   expect(panel.element.querySelector('h1')?.textContent)
-    .toBe('污水处理现场助手');
+    .toBe('汽车制造现场助手');
   expect(panel.input.placeholder).toBe('查看当前设备');
   panel.render(initialState('thread-copy'));
   expect(panel.element.textContent).toContain('讲解工艺连接');

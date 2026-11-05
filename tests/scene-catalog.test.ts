@@ -4,35 +4,35 @@ import { createEquipmentCatalog } from '../src/scene/catalog.js';
 
 const catalog = createEquipmentCatalog([
   {
-    selectionId: 'ice3-virtual-wwtp/equipment/AE-101',
-    name: '好氧池 A',
+    selectionId: 'ice3-virtual-auto-plant/equipment/ROBOT-201',
+    name: '点焊机器人',
     metadata: {
-      equipmentTag: 'AE-101',
-      processStage: 'biological',
-      area: 'BiologicalTrainA',
+      equipmentTag: 'ROBOT-201',
+      processStage: 'body-shop',
+      area: 'BodyShop',
     },
   },
   {
-    selectionId: 'ice3-virtual-wwtp/equipment/SC-101',
-    name: '二沉池 A',
+    selectionId: 'ice3-virtual-auto-plant/equipment/PAINT-301',
+    name: '自动喷涂舱',
     metadata: {
-      equipmentTag: 'SC-101',
-      processStage: 'secondary',
-      area: 'SecondaryTreatmentArea',
+      equipmentTag: 'PAINT-301',
+      processStage: 'paint-shop',
+      area: 'PaintShop',
     },
   },
 ]);
 
 test('finds equipment by tag, Chinese name, stage, and area', () => {
-  expect(catalog.find({ query: 'AE-101' })[0]?.name).toBe('好氧池 A');
-  expect(catalog.find({ query: '二沉池' })[0]?.selectionId)
-    .toContain('SC-101');
-  expect(catalog.find({ stage: 'biological' })[0]?.tag).toBe('AE-101');
-  expect(catalog.find({ area: 'SecondaryTreatmentArea' })[0]?.tag)
-    .toBe('SC-101');
+  expect(catalog.find({ query: 'ROBOT-201' })[0]?.name).toBe('点焊机器人');
+  expect(catalog.find({ query: '喷涂舱' })[0]?.selectionId)
+    .toContain('PAINT-301');
+  expect(catalog.find({ stage: 'body-shop' })[0]?.tag).toBe('ROBOT-201');
+  expect(catalog.find({ area: 'PaintShop' })[0]?.tag)
+    .toBe('PAINT-301');
 });
 
 test('ranks exact tags ahead of partial text matches', () => {
-  expect(catalog.find({ query: 'SC-101' })[0]?.tag).toBe('SC-101');
+  expect(catalog.find({ query: 'ROBOT-201' })[0]?.tag).toBe('ROBOT-201');
   expect(catalog.find({ query: '不存在' })).toEqual([]);
 });

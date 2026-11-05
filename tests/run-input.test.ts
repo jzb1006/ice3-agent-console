@@ -24,10 +24,10 @@ test('preserves non-empty resume entries and scene context', () => {
     threadId: 'thread-1',
     runId: 'run-2',
     messages: [],
-    context: [{ description: 'selected', value: 'SC-101' }],
+    context: [{ description: 'selected', value: 'ROBOT-201' }],
     resume: [{ interruptId: 'interrupt-1', status: 'resolved' }],
   });
-  expect(result.context).toEqual([{ description: 'selected', value: 'SC-101' }]);
+  expect(result.context).toEqual([{ description: 'selected', value: 'ROBOT-201' }]);
   expect(result.resume).toEqual([
     { interruptId: 'interrupt-1', status: 'resolved' },
   ]);

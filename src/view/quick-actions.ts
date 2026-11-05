@@ -1,6 +1,6 @@
 import { FACTORY_QUICK_ACTION_GROUPS as QUICK_ACTION_GROUPS } from '../../shared/factory-scenarios.js';
 
-export type { QuickAction } from '../../shared/scenarios.js';
+export type { FactoryQuickAction as QuickAction } from '../../shared/factory-scenarios.js';
 
 export function createQuickActions(
   container: HTMLElement,

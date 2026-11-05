@@ -26,7 +26,7 @@ test('sends credentials only in the server request header', async () => {
   });
 
   const response = await client.complete([
-    { role: 'user', content: '定位二沉池' },
+    { role: 'user', content: '定位点焊机器人' },
   ]);
 
   expect(capturedUrl).toBe('https://model.example/v1/chat/completions');

@@ -59,31 +59,13 @@ test('runs the static demo without an Agent server', async ({ page }) => {
     .toHaveText('剧本模式');
   await expect(page.locator('[data-role="scene-status"]'))
     .toHaveText('场景已就绪', { timeout: 60_000 });
-  await page.getByRole('button', { name: '二沉池', exact: true }).click();
+  await page.getByRole('button', { name: '车身焊装', exact: true }).click();
   await expect(page.locator('[data-role="selection-tag"]'))
-    .toHaveText('SC-101', { timeout: 10_000 });
+    .toHaveText('WELD-201', { timeout: 10_000 });
   expect(backendRequests).toEqual([]);
 });
 
-test('loads the prepared Tileset scene when explicitly requested', async ({
-  page,
-}) => {
-  const tilesetRequests: string[] = [];
-  page.on('request', (request) => {
-    if (request.url().includes('/assets/wastewater-plant/tiled/tileset.json')) {
-      tilesetRequests.push(request.url());
-    }
-  });
-  await page.goto('http://127.0.0.1:8111/?demo=1&autoplay=0&scene=tileset');
-  await expect(page.locator('[data-role="scene-status"]'))
-    .toHaveText(/场景已就绪/, { timeout: 60_000 });
-  expect(await page.evaluate(() => (
-    window.__ICE3_AGENT_CONSOLE__.sceneMode()
-  ))).toBe('tileset');
-  expect(tilesetRequests).toHaveLength(1);
-});
-
-test('runs a grouped system scenario in the static build', async ({ page }) => {
+test('runs a production scenario in the static build', async ({ page }) => {
   const backendRequests: string[] = [];
   page.on('request', (request) => {
     if (request.url().includes(':8099')) {
@@ -94,11 +76,11 @@ test('runs a grouped system scenario in the static build', async ({ page }) => {
   await expect(page.locator('[data-role="scene-status"]'))
     .toHaveText('场景已就绪', { timeout: 60_000 });
 
-  await page.getByRole('button', { name: '曝气系统', exact: true }).click();
+  await page.getByRole('button', { name: '涂装工艺', exact: true }).click();
   await expect(page.locator('[data-role="selection-tag"]'))
-    .toHaveText('BLW-101', { timeout: 10_000 });
+    .toHaveText('PAINT-301', { timeout: 10_000 });
   await expect(page.locator('[data-role="selection-tag"]'))
-    .toHaveText('BLW-101-A', { timeout: 10_000 });
+    .toHaveText('TRIM-401', { timeout: 10_000 });
   expect(backendRequests).toEqual([]);
 });
 
@@ -109,9 +91,9 @@ test('keeps the selected equipment highlighted during scenario playback', async 
   await expect(page.locator('[data-role="scene-status"]'))
     .toHaveText('场景已就绪', { timeout: 60_000 });
 
-  await page.getByRole('button', { name: 'AAO 生化段', exact: true }).click();
+  await page.getByRole('button', { name: '总装流程', exact: true }).click();
   await expect(page.locator('[data-role="selection-tag"]'))
-    .toHaveText('RWS-101', { timeout: 20_000 });
+    .toHaveText('QA-501', { timeout: 20_000 });
   await expect.poll(
     () => yellowPixelCount(page),
     { timeout: 1_200, intervals: [100] },
@@ -128,9 +110,9 @@ test('returns to overview and hides the focus card after a complete scenario', a
     window.__ICE3_AGENT_CONSOLE__.snapshot()
   ));
 
-  await page.getByRole('button', { name: '二沉池', exact: true }).click();
+  await page.getByRole('button', { name: '质量检测', exact: true }).click();
   await expect(page.locator('[data-role="selection-tag"]'))
-    .toHaveText('SC-103', { timeout: 20_000 });
+    .toHaveText('EOL-601', { timeout: 20_000 });
   await page.waitForTimeout(600);
   const focusedCanvas = await page.locator(
     'canvas[data-layer="scene"]',

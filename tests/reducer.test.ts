@@ -27,7 +27,7 @@ test('streams text and executes a complete scene tool call', () => {
   result = reduceThread(result.state, {
     type: EventType.TOOL_CALL_ARGS,
     toolCallId: 'call-1',
-    delta: '{"selectionId":"SC-101"}',
+    delta: '{"selectionId":"ROBOT-201"}',
   });
   result = reduceThread(result.state, {
     type: EventType.TOOL_CALL_END,
@@ -43,7 +43,7 @@ test('streams text and executes a complete scene tool call', () => {
     type: 'execute-tool',
     toolCallId: 'call-1',
     name: 'focus_equipment',
-    args: { selectionId: 'SC-101' },
+    args: { selectionId: 'ROBOT-201' },
   }]);
 });
 

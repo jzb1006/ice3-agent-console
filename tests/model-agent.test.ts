@@ -14,7 +14,7 @@ test('emits a provider failure instead of scripted fallback', async () => {
     threadId: 'thread-1',
     runId: 'run-1',
     state: {},
-    messages: [{ id: 'u1', role: 'user', content: '定位二沉池' }],
+    messages: [{ id: 'u1', role: 'user', content: '定位点焊机器人' }],
     context: [],
     tools: [],
     forwardedProps: {},
@@ -32,11 +32,11 @@ test('emits a provider failure instead of scripted fallback', async () => {
 test('maps approved model tool calls to the shared event stream', async () => {
   const agent = createModelAgent({
     complete: async () => ({
-      text: '正在定位二沉池。',
+      text: '正在定位点焊机器人。',
       toolCalls: [{
         id: 'provider-call-1',
         name: 'focus_equipment',
-        arguments: '{"selectionId":"ice3-virtual-wwtp/equipment/SC-101"}',
+        arguments: '{"selectionId":"ice3-virtual-auto-plant/equipment/ROBOT-201"}',
       }],
     }),
   });
@@ -45,7 +45,7 @@ test('maps approved model tool calls to the shared event stream', async () => {
     threadId: 'thread-1',
     runId: 'run-1',
     state: {},
-    messages: [{ id: 'u1', role: 'user', content: '定位二沉池' }],
+    messages: [{ id: 'u1', role: 'user', content: '定位点焊机器人' }],
     context: [],
     tools: [],
     forwardedProps: {},
@@ -59,7 +59,7 @@ test('maps approved model tool calls to the shared event stream', async () => {
   expect(events.at(-1)?.type).toBe(EventType.RUN_FINISHED);
 });
 
-test('uses the Tileset scene domain in the model system prompt', async () => {
+test('uses the automotive factory domain in the model system prompt', async () => {
   let messages: readonly { role: string; content: string }[] = [];
   const agent = createModelAgent({
     async complete(nextMessages) {
@@ -76,12 +76,10 @@ test('uses the Tileset scene domain in the model system prompt', async () => {
     tools: [],
     forwardedProps: {},
   };
-  request.context = [{ description: 'scene mode', value: 'tileset' }];
   for await (const _event of agent.run(request)) {
     // Consume the stream so the model call is executed.
   }
-  expect(messages[0]?.content).toContain('当前污水处理厂');
-  expect(messages[0]?.content).not.toContain('当前汽车制造工厂');
+  expect(messages[0]?.content).toContain('当前汽车制造工厂');
 });
 
 test('rejects unapproved model tools without emitting them', async () => {

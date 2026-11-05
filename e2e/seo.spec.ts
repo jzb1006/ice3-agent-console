@@ -12,7 +12,7 @@ test('serves production TDK and keeps GA disabled on localhost', async ({ page }
   await expect(page.locator('[data-role="scene-status"]'))
     .toHaveText('场景已就绪', { timeout: 60_000 });
 
-  await expect(page).toHaveTitle(/污水处理厂.*3D.*ICE3/);
+  await expect(page).toHaveTitle(/汽车制造工厂.*3D.*ICE3/);
   await expect(page.locator('meta[name="description"]'))
     .toHaveAttribute('content', /Agent/);
   await expect(page.locator('link[rel="canonical"]'))

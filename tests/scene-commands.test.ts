@@ -9,12 +9,12 @@ import type {
 
 class FakeScene {
   readonly items: readonly EquipmentRecord[] = [{
-    selectionId: 'ice3-virtual-wwtp/equipment/SC-101',
-    name: '二沉池 A',
+    selectionId: 'ice3-virtual-auto-plant/equipment/ROBOT-201',
+    name: '点焊机器人',
     metadata: {
-      equipmentTag: 'SC-101',
-      processStage: 'secondary',
-      area: 'SecondaryTreatmentArea',
+      equipmentTag: 'ROBOT-201',
+      processStage: 'body-shop',
+      area: 'BodyShop',
     },
     bounds: { min: [-7, 0, -7], max: [7, 5, 7] },
   }];
@@ -72,10 +72,10 @@ test('focuses and clears a known device', async () => {
   const executor = new SceneCommandExecutor(scene);
   const focused = await executor.execute({
     type: 'focus',
-    selectionIds: ['ice3-virtual-wwtp/equipment/SC-101'],
+    selectionIds: ['ice3-virtual-auto-plant/equipment/ROBOT-201'],
   });
   expect(focused.ok).toBe(true);
-  expect(scene.selection).toEqual(['ice3-virtual-wwtp/equipment/SC-101']);
+  expect(scene.selection).toEqual(['ice3-virtual-auto-plant/equipment/ROBOT-201']);
   expect(scene.cameraMoves).toBe(1);
   const cleared = await executor.execute({ type: 'clear' });
   expect(cleared.ok).toBe(true);

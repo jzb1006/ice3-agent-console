@@ -7,7 +7,6 @@ import type {
   RunTransport,
 } from '../protocol/run-input.js';
 import type { SceneController } from '../scene/types.js';
-import type { SceneMode } from './mode.js';
 
 export interface SessionView {
   appendUserMessage(text: string, id?: string): void;
@@ -31,7 +30,6 @@ interface SessionOptions {
   readonly scene: SceneController;
   readonly view: SessionView;
   readonly threadId: string;
-  readonly sceneMode?: SceneMode;
   readonly autoplay?: {
     readonly enabled: boolean;
     readonly delayMs: number;
@@ -100,7 +98,6 @@ export function createSession(options: SessionOptions): AgentConsoleSession {
     scene,
     view,
     threadId,
-    sceneMode = 'procedural',
     autoplay,
   } = options;
   let state = initialState(threadId);
@@ -244,10 +241,6 @@ export function createSession(options: SessionOptions): AgentConsoleSession {
         {
           description: 'camera state',
           value: JSON.stringify(snapshot),
-        },
-        {
-          description: 'scene mode',
-          value: sceneMode,
         },
         {
           description: 'equipment catalog',

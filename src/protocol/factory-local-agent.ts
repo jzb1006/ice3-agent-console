@@ -30,11 +30,6 @@ function presentationMode(input: RunAgentInput): string | undefined {
   return typeof value === 'string' ? value : undefined;
 }
 
-function sceneMode(input: RunAgentInput): string | undefined {
-  const value = input.context?.find((entry) => entry.description === 'scene mode')?.value;
-  return typeof value === 'string' ? value : undefined;
-}
-
 function includesAny(text: string, words: readonly string[]): boolean {
   return words.some((word) => text.includes(word));
 }
@@ -43,35 +38,9 @@ function toTextStream(steps: readonly FactoryScenarioStep[]): readonly TextStrea
   return steps.map((step) => ({ text: step.text, tool: step.tool, holdMs: step.holdMs }));
 }
 
-function tilesetScriptedPlan(
-  text: string,
-  selected: string | undefined,
-): readonly TextStream[] {
-  if (includesAny(text, ['清除', '复位', '回到整厂', '回到全厂', '回到总览'])) {
-    return [{
-      text: '好的，已清除设备聚焦并回到全厂总览。',
-      tool: { name: 'clear_scene_focus', args: {} },
-    }];
-  }
-  if (includesAny(text, ['总览', '全厂', '全景'])) {
-    return [{
-      text: '正在切换到污水处理厂全厂总览。',
-      tool: { name: 'set_camera_view', args: { view: 'overview' } },
-    }];
-  }
-  if (selected && includesAny(text, ['当前设备', '这台设备', '这个设备', '讲解', '介绍'])) {
-    return [
-      { text: '正在定位当前设备。', tool: { name: 'focus_equipment', args: { selectionId: selected } } },
-      { text: '设备已高亮，可以结合右侧信息卡查看工艺段和上下游连接。', tool: { name: 'highlight_equipment', args: { selectionIds: [selected] } } },
-    ];
-  }
-  return [{ text: '你可以先选择一台设备，再询问当前设备；也可以让我切换到全厂总览。' }];
-}
-
 export function factoryScriptedPlan(input: RunAgentInput): readonly TextStream[] {
   const text = messageText(input);
   const selected = selectedEquipment(input);
-  if (sceneMode(input) === 'tileset') return tilesetScriptedPlan(text, selected);
   if (presentationMode(input) === 'guided-tour' && includesAny(text, ['整个汽车', '汽车制造工厂', '整厂'])) return OPENING_TOUR;
   if (includesAny(text, ['清除', '复位', '回到整厂', '回到全厂', '回到总览'])) return [{ text: '好的，已清除设备聚焦并回到整厂总览。', tool: { name: 'clear_scene_focus', args: {} } }];
   if (includesAny(text, ['整车生产流', '生产流', '材料到整车', '整车出厂'])) {
