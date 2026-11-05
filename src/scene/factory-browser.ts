@@ -71,6 +71,12 @@ export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLik
       max: [x + 2.9, y + 4.65, z + 3.05],
     };
   }
+  if (item.tag === 'TRIM-401') {
+    return {
+      min: [x - 3.05, y - 1.75, z - 4.9],
+      max: [x + 3.05, y + 3.95, z + 3.5],
+    };
+  }
   const [width, height, depth] = item.size;
   return {
     min: [x - width / 2, y - height / 2, z - depth / 2],
@@ -432,6 +438,77 @@ export function addDryingOvenStation(
   return { parts };
 }
 
+export function addTrimAssemblyStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+): FactoryStationVisual {
+  const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    const visualPart = mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      {
+        selectionId: item.selectionId,
+        edgeColor,
+      },
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
+  };
+
+  part('assembly-floor', [5.7, 0.24, 6], [0, -1.45, 0], '#263d43', '#739692');
+  part('body-platform', [4.1, 0.18, 4.4], [0, -0.62, 0], '#708987', '#d9eee4');
+  part('dashboard', [0.32, 0.72, 3.5], [-1.55, 0.45, 0], '#536e75', '#c7e9df');
+  part('center-console', [1.45, 0.3, 0.72], [-0.05, 0.06, 0], '#687f82', '#d8eee4');
+  part('seat-left', [1.1, 0.62, 1.3], [-0.55, -0.02, -0.9], '#3e6970', '#a9e5d6');
+  part('seat-right', [1.1, 0.62, 1.3], [-0.55, -0.02, 0.9], '#3e6970', '#a9e5d6');
+  part('seat-back-left', [0.26, 0.92, 1.3], [-1.03, 0.58, -0.9], '#31545d', '#91cfc4');
+  part('seat-back-right', [0.26, 0.92, 1.3], [-1.03, 0.58, 0.9], '#31545d', '#91cfc4');
+  part('door-panel-near', [0.22, 0.88, 2.55], [1.35, 0.08, -2.15], '#58777b', '#c6e6dc');
+  part('door-panel-far', [0.22, 0.88, 2.55], [1.35, 0.08, 2.15], '#58777b', '#c6e6dc');
+
+  part('overhead-rail', [5.15, 0.2, 0.22], [0, 3.02, -2.35], '#5c777b', '#c8e7dc');
+  part('overhead-beam', [0.22, 0.2, 4.8], [0, 2.8, -2.35], '#728d8c', '#d9f0e5');
+  part('lift-frame', [1.85, 0.18, 0.18], [0, 2.45, -2.35], '#d0a744', '#ffeb9c');
+  part('lift-cable-left', [0.12, 0.9, 0.12], [-0.68, 1.98, -2.35], '#7a9290', '#d8eee3');
+  part('lift-cable-right', [0.12, 0.9, 0.12], [0.68, 1.98, -2.35], '#7a9290', '#d8eee3');
+
+  part('robot-base-left', [0.78, 0.68, 0.78], [1.7, 0.02, -1.55], '#bd6844', '#ffd0ac');
+  part('robot-arm-left-lower', [0.3, 1.45, 0.3], [1.7, 0.98, -1.55], '#d47a48', '#ffd4b0');
+  part('robot-arm-left-upper', [1.45, 0.3, 0.3], [1.98, 1.78, -1.55], '#e18b4f', '#ffe0bc');
+  part('robot-tool-left', [0.28, 0.52, 0.28], [2.55, 1.46, -1.55], '#718e90', '#d4eee3');
+  part('robot-base-right', [0.78, 0.68, 0.78], [1.7, 0.02, 1.55], '#bd6844', '#ffd0ac');
+  part('robot-arm-right-lower', [0.3, 1.45, 0.3], [1.7, 0.98, 1.55], '#d47a48', '#ffd4b0');
+  part('robot-arm-right-upper', [1.45, 0.3, 0.3], [1.98, 1.78, 1.55], '#e18b4f', '#ffe0bc');
+  part('robot-tool-right', [0.28, 0.52, 0.28], [2.55, 1.46, 1.55], '#718e90', '#d4eee3');
+
+  part('interior-light-0', [0.36, 0.14, 0.36], [-0.9, 2.5, -1.35], '#7ed2bd', '#d8fff2');
+  part('interior-light-1', [0.36, 0.14, 0.36], [-0.9, 2.5, 0], '#7ed2bd', '#d8fff2');
+  part('interior-light-2', [0.36, 0.14, 0.36], [-0.9, 2.5, 1.35], '#7ed2bd', '#d8fff2');
+  part('assembly-spark-0', [0.16, 0.16, 0.16], [2.55, 1.1, -1.55], '#f0c64b', '#fff1a1');
+  part('assembly-spark-1', [0.14, 0.14, 0.14], [2.78, 1.28, -1.55], '#77d2c0', '#d3fff1');
+  part('assembly-spark-2', [0.16, 0.16, 0.16], [2.55, 1.1, 1.55], '#f0c64b', '#fff1a1');
+
+  part('status-pole', [0.12, 0.95, 0.12], [2.45, 1.15, 2.95], '#6d8784', '#c4e6da');
+  part('status-red', [0.26, 0.18, 0.26], [2.45, 1.68, 2.95], '#bf4e4a', '#ffaaa0');
+  part('status-yellow', [0.26, 0.18, 0.26], [2.45, 1.44, 2.95], '#d5a83e', '#ffe99a');
+  part('status-green', [0.26, 0.18, 0.26], [2.45, 1.2, 2.95], '#54b58b', '#b1f5d1');
+  for (const suffix of ['0', '1', '2']) {
+    const spark = parts.get(`assembly-spark-${suffix}`);
+    if (spark) spark.visible = false;
+  }
+  return { parts };
+}
+
 function addFactoryEquipment(
   scene: ICEScene,
   stationVisuals: Map<string, FactoryStationVisual>,
@@ -472,6 +549,8 @@ function addFactoryEquipment(
       stationVisuals.set(item.tag, addPaintBoothStation(scene, item));
     } else if (item.tag === 'OVEN-302') {
       stationVisuals.set(item.tag, addDryingOvenStation(scene, item));
+    } else if (item.tag === 'TRIM-401') {
+      stationVisuals.set(item.tag, addTrimAssemblyStation(scene, item));
     } else {
       scene.addChild(mesh(
         `equipment-${item.tag}`,
@@ -766,6 +845,67 @@ export function createDryingOvenMotion(
   };
 }
 
+export function createTrimAssemblyMotion(
+  visual: FactoryStationVisual | undefined,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    for (const suffix of ['0', '1', '2']) {
+      const spark = parts?.get(`assembly-spark-${suffix}`);
+      if (spark) spark.visible = false;
+    }
+    const green = parts?.get('status-green');
+    const yellow = parts?.get('status-yellow');
+    if (green) green.visible = true;
+    if (yellow) yellow.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const lift = 0.24 * Math.sin(progress * Math.PI * 2);
+      for (const suffix of ['lift-frame', 'lift-cable-left', 'lift-cable-right']) {
+        const liftPart = parts.get(suffix);
+        if (!liftPart) continue;
+        const base = liftPart.position;
+        liftPart.setLocalMatrix(translationMatrix(base.x, base.y + lift, base.z));
+      }
+      const swing = 0.42 * Math.sin(progress * Math.PI * 2);
+      for (const [suffix, multiplier] of [
+        ['robot-arm-left-lower', 1],
+        ['robot-arm-right-lower', -1],
+        ['robot-arm-left-upper', -1.2],
+        ['robot-arm-right-upper', 1.2],
+      ] as const) {
+        const arm = parts.get(suffix);
+        if (!arm) continue;
+        const base = arm.position;
+        arm.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], swing * multiplier));
+      }
+      for (const [suffix, phase] of [['left', 0], ['right', Math.PI]] as const) {
+        const tool = parts.get(`robot-tool-${suffix}`);
+        if (!tool) continue;
+        const base = tool.position;
+        tool.setLocalMatrix(translationMatrix(
+          base.x + Math.sin(progress * Math.PI * 2 + phase) * 0.16,
+          base.y + Math.cos(progress * Math.PI * 2 + phase) * 0.12,
+          base.z,
+        ));
+      }
+      const assemblyActive = Math.sin(progress * Math.PI * 12) > 0.15;
+      for (const suffix of ['0', '1', '2']) {
+        const spark = parts.get(`assembly-spark-${suffix}`);
+        if (spark) spark.visible = assemblyActive;
+      }
+      const green = parts.get('status-green');
+      const yellow = parts.get('status-yellow');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+      if (yellow) yellow.visible = !green?.visible;
+    },
+    reset,
+  };
+}
+
 function createProductionVehicle(scene: ICEScene): ProductionVehicle {
   const root = new ICENode({
     id: 'production-run-vehicle',
@@ -880,6 +1020,7 @@ function createProductionAnimation(
     ['WELD-201', createWeldingRobotMotion(stationVisuals.get('WELD-201'))],
     ['PAINT-301', createPaintBoothMotion(stationVisuals.get('PAINT-301'))],
     ['OVEN-302', createDryingOvenMotion(stationVisuals.get('OVEN-302'))],
+    ['TRIM-401', createTrimAssemblyMotion(stationVisuals.get('TRIM-401'))],
   ]);
   let active: AbortController | null = null;
   let disposed = false;
@@ -978,6 +1119,7 @@ function createStationPreviewAnimation(
     ['WELD-201', createWeldingRobotMotion(stationVisuals.get('WELD-201'))],
     ['PAINT-301', createPaintBoothMotion(stationVisuals.get('PAINT-301'))],
     ['OVEN-302', createDryingOvenMotion(stationVisuals.get('OVEN-302'))],
+    ['TRIM-401', createTrimAssemblyMotion(stationVisuals.get('TRIM-401'))],
   ]);
   const durationByTag: ReadonlyMap<string, number> = new Map([
     ['BODY-101', 1_400],
@@ -985,6 +1127,7 @@ function createStationPreviewAnimation(
     ['WELD-201', 1_700],
     ['PAINT-301', 1_800],
     ['OVEN-302', 1_800],
+    ['TRIM-401', 1_900],
   ]);
   let active: {
     readonly controller: AbortController;
@@ -1255,6 +1398,7 @@ export async function createFactorySceneController(
       || selectedTag === 'WELD-201'
       || selectedTag === 'PAINT-301'
       || selectedTag === 'OVEN-302'
+      || selectedTag === 'TRIM-401'
     ) {
       stationPreviewAnimation.play(selectedTag);
     } else {

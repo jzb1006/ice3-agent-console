@@ -7,12 +7,14 @@ import {
   addDryingOvenStation,
   addMainConveyorStation,
   addPaintBoothStation,
+  addTrimAssemblyStation,
   addWeldingRobotStation,
   boundsForEquipment,
   createBodyStationMotion,
   createConveyorStationMotion,
   createDryingOvenMotion,
   createPaintBoothMotion,
+  createTrimAssemblyMotion,
   createWeldingRobotMotion,
 } from '../src/scene/factory-browser.ts';
 
@@ -172,4 +174,38 @@ test('OVEN-302 drying oven preserves selection identity and animates heat flow',
   expect(roller.toJSON().matrix).toBeUndefined();
   expect(fan.toJSON().matrix).toBeUndefined();
   expect(heatGlow.visible).toBe(false);
+});
+
+test('TRIM-401 assembly station preserves selection identity and animates installation', () => {
+  const scene = new ICEScene({ id: 'test-scene' });
+  const trim = FACTORY_EQUIPMENT.find((item) => item.tag === 'TRIM-401');
+  if (!trim) throw new Error('TRIM-401 fixture is missing');
+
+  const visual = addTrimAssemblyStation(scene, trim);
+  expect(scene.children.length).toBeGreaterThan(25);
+  expect(scene.children.every((child) => (
+    child.selectionId === trim.selectionId
+  ))).toBe(true);
+  const trimBounds = boundsForEquipment(trim);
+  expect(trimBounds.min[0]).toBeCloseTo(9.95);
+  expect(trimBounds.min[1]).toBeCloseTo(-0.65);
+  expect(trimBounds.min[2]).toBeCloseTo(-4.9);
+  expect(trimBounds.max[0]).toBeCloseTo(16.05);
+  expect(trimBounds.max[1]).toBeCloseTo(5.05);
+  expect(trimBounds.max[2]).toBeCloseTo(3.5);
+
+  const lift = visual.parts.get('lift-frame');
+  const arm = visual.parts.get('robot-arm-left-lower');
+  const spark = visual.parts.get('assembly-spark-0');
+  if (!lift || !arm || !spark) throw new Error('TRIM-401 motion fixtures are missing');
+
+  const motion = createTrimAssemblyMotion(visual);
+  motion.update(0.2);
+  expect(lift.toJSON().matrix).toBeDefined();
+  expect(arm.toJSON().matrix).toBeDefined();
+  expect(spark.visible).toBe(true);
+  motion.reset();
+  expect(lift.toJSON().matrix).toBeUndefined();
+  expect(arm.toJSON().matrix).toBeUndefined();
+  expect(spark.visible).toBe(false);
 });
