@@ -5,10 +5,12 @@ import { FACTORY_EQUIPMENT } from '../shared/factory.ts';
 import {
   addBodyLoadingStation,
   addMainConveyorStation,
+  addPaintBoothStation,
   addWeldingRobotStation,
   boundsForEquipment,
   createBodyStationMotion,
   createConveyorStationMotion,
+  createPaintBoothMotion,
   createWeldingRobotMotion,
 } from '../src/scene/factory-browser.ts';
 
@@ -103,4 +105,35 @@ test('WELD-201 robot island preserves selection identity and animated pose', () 
   motion.reset();
   expect(arm.toJSON().matrix).toBeUndefined();
   expect(spark.visible).toBe(false);
+});
+
+test('PAINT-301 booth preserves selection identity and animates the spray gantry', () => {
+  const scene = new ICEScene({ id: 'test-scene' });
+  const paint = FACTORY_EQUIPMENT.find((item) => item.tag === 'PAINT-301');
+  if (!paint) throw new Error('PAINT-301 fixture is missing');
+
+  const visual = addPaintBoothStation(scene, paint);
+  expect(scene.children.length).toBeGreaterThan(10);
+  expect(scene.children.every((child) => (
+    child.selectionId === paint.selectionId
+  ))).toBe(true);
+  const paintBounds = boundsForEquipment(paint);
+  expect(paintBounds.min[0]).toBeCloseTo(-2.7);
+  expect(paintBounds.min[1]).toBeCloseTo(0);
+  expect(paintBounds.min[2]).toBeCloseTo(-3.2);
+  expect(paintBounds.max[0]).toBeCloseTo(2.7);
+  expect(paintBounds.max[1]).toBeCloseTo(5.1);
+  expect(paintBounds.max[2]).toBeCloseTo(3.2);
+
+  const gantry = visual.parts.get('gantry-rail');
+  const mist = visual.parts.get('paint-mist-0');
+  if (!gantry || !mist) throw new Error('PAINT-301 motion fixtures are missing');
+
+  const motion = createPaintBoothMotion(visual);
+  motion.update(0.2);
+  expect(gantry.toJSON().matrix).toBeDefined();
+  expect(mist.visible).toBe(true);
+  motion.reset();
+  expect(gantry.toJSON().matrix).toBeUndefined();
+  expect(mist.visible).toBe(false);
 });

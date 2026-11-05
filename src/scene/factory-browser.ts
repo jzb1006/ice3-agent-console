@@ -59,6 +59,12 @@ export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLik
       max: [x + 2.6, y + 2.8, z + 2.9],
     };
   }
+  if (item.tag === 'PAINT-301') {
+    return {
+      min: [x - 2.7, y - 1.8, z - 3.2],
+      max: [x + 2.7, y + 3.3, z + 3.2],
+    };
+  }
   const [width, height, depth] = item.size;
   return {
     min: [x - width / 2, y - height / 2, z - depth / 2],
@@ -293,6 +299,58 @@ export function addWeldingRobotStation(
   return { parts };
 }
 
+export function addPaintBoothStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+): FactoryStationVisual {
+  const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    const visualPart = mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      {
+        selectionId: item.selectionId,
+        edgeColor,
+      },
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
+  };
+
+  part('booth-floor', [5, 0.24, 6], [0, -1.65, 0], '#263d43', '#739692');
+  part('wall-left', [0.22, 3.2, 5.8], [-2.4, 0, 0], '#41656b', '#b6e2d6');
+  part('wall-right', [0.22, 3.2, 5.8], [2.4, 0, 0], '#41656b', '#b6e2d6');
+  part('wall-back', [4.8, 3.2, 0.22], [0, 0, 2.9], '#35575e', '#9dcbc1');
+  part('booth-roof', [4.8, 0.22, 5.8], [0, 3.15, 0], '#2d4c53', '#80aaa4');
+  part('turntable', [3.2, 0.18, 2.8], [0, -0.3, 0.2], '#778f8d', '#d9eee4');
+  part('paint-fixture-left', [0.18, 0.72, 0.18], [-1.15, 0.18, 0.2], '#d1a842', '#ffe998');
+  part('paint-fixture-right', [0.18, 0.72, 0.18], [1.15, 0.18, 0.2], '#d1a842', '#ffe998');
+
+  part('gantry-rail', [4.2, 0.18, 0.18], [0, 2.3, -2.25], '#d0a744', '#ffeb9c');
+  part('spray-arm', [0.24, 1.9, 0.24], [1.45, 1.35, -2.25], '#6a8c8c', '#c7eee1');
+  part('spray-nozzle', [0.3, 0.32, 0.3], [1.45, 0.45, -2.25], '#d28a4e', '#ffdbb5');
+  part('paint-mist-0', [0.22, 0.22, 0.22], [1.45, 0.1, -2.25], '#80d6c4', '#d7fff2');
+  part('paint-mist-1', [0.16, 0.16, 0.16], [1.15, 0.25, -2.25], '#79c7bd', '#d7fff2');
+  part('paint-mist-2', [0.16, 0.16, 0.16], [1.75, 0.25, -2.25], '#79c7bd', '#d7fff2');
+  part('curtain-near', [4.6, 2.8, 0.08], [0, 0.1, -2.82], '#315d64', '#8bc7bc');
+  part('curtain-far', [4.6, 2.8, 0.08], [0, 0.1, 2.82], '#315d64', '#8bc7bc');
+
+  part('status-pole', [0.12, 0.95, 0.12], [1.9, 1.15, 2.55], '#6d8784', '#c4e6da');
+  part('status-red', [0.26, 0.18, 0.26], [1.9, 1.68, 2.55], '#bf4e4a', '#ffaaa0');
+  part('status-yellow', [0.26, 0.18, 0.26], [1.9, 1.44, 2.55], '#d5a83e', '#ffe99a');
+  part('status-green', [0.26, 0.18, 0.26], [1.9, 1.2, 2.55], '#54b58b', '#b1f5d1');
+  return { parts };
+}
+
 function addFactoryEquipment(
   scene: ICEScene,
   stationVisuals: Map<string, FactoryStationVisual>,
@@ -329,6 +387,8 @@ function addFactoryEquipment(
       stationVisuals.set(item.tag, addMainConveyorStation(scene, item));
     } else if (item.tag === 'WELD-201') {
       stationVisuals.set(item.tag, addWeldingRobotStation(scene, item));
+    } else if (item.tag === 'PAINT-301') {
+      stationVisuals.set(item.tag, addPaintBoothStation(scene, item));
     } else {
       scene.addChild(mesh(
         `equipment-${item.tag}`,
@@ -529,6 +589,54 @@ export function createWeldingRobotMotion(
   };
 }
 
+export function createPaintBoothMotion(
+  visual: FactoryStationVisual | undefined,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    for (const suffix of ['0', '1', '2']) {
+      const mist = parts?.get(`paint-mist-${suffix}`);
+      if (mist) mist.visible = false;
+    }
+    const green = parts?.get('status-green');
+    const yellow = parts?.get('status-yellow');
+    if (green) green.visible = true;
+    if (yellow) yellow.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const sweep = Math.sin(progress * Math.PI * 2) * 1.45;
+      const rail = parts.get('gantry-rail');
+      if (rail) {
+        const base = rail.position;
+        rail.setLocalMatrix(translationMatrix(base.x, base.y, base.z + sweep));
+      }
+      const arm = parts.get('spray-arm');
+      if (arm) {
+        const base = arm.position;
+        arm.setLocalMatrix(translationMatrix(base.x, base.y, base.z + sweep));
+      }
+      const nozzle = parts.get('spray-nozzle');
+      if (nozzle) {
+        const base = nozzle.position;
+        nozzle.setLocalMatrix(translationMatrix(base.x, base.y, base.z + sweep));
+      }
+      const mistActive = Math.sin(progress * Math.PI * 14) > -0.15;
+      for (const suffix of ['0', '1', '2']) {
+        const mist = parts.get(`paint-mist-${suffix}`);
+        if (mist) mist.visible = mistActive;
+      }
+      const green = parts.get('status-green');
+      const yellow = parts.get('status-yellow');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+      if (yellow) yellow.visible = !green?.visible;
+    },
+    reset,
+  };
+}
+
 function createProductionVehicle(scene: ICEScene): ProductionVehicle {
   const root = new ICENode({
     id: 'production-run-vehicle',
@@ -641,6 +749,7 @@ function createProductionAnimation(
     ['BODY-101', createBodyStationMotion(stationVisuals.get('BODY-101'))],
     ['CONV-101', createConveyorStationMotion(stationVisuals.get('CONV-101'))],
     ['WELD-201', createWeldingRobotMotion(stationVisuals.get('WELD-201'))],
+    ['PAINT-301', createPaintBoothMotion(stationVisuals.get('PAINT-301'))],
   ]);
   let active: AbortController | null = null;
   let disposed = false;
@@ -737,11 +846,13 @@ function createStationPreviewAnimation(
     ['BODY-101', createBodyStationMotion(stationVisuals.get('BODY-101'))],
     ['CONV-101', createConveyorStationMotion(stationVisuals.get('CONV-101'))],
     ['WELD-201', createWeldingRobotMotion(stationVisuals.get('WELD-201'))],
+    ['PAINT-301', createPaintBoothMotion(stationVisuals.get('PAINT-301'))],
   ]);
   const durationByTag: ReadonlyMap<string, number> = new Map([
     ['BODY-101', 1_400],
     ['CONV-101', 1_400],
     ['WELD-201', 1_700],
+    ['PAINT-301', 1_800],
   ]);
   let active: {
     readonly controller: AbortController;
@@ -1006,7 +1117,12 @@ export async function createFactorySceneController(
     );
     logicalSelection = ids;
     const selectedTag = ids[0] ? tagForSelectionId(ids[0]) : undefined;
-    if (selectedTag === 'BODY-101' || selectedTag === 'CONV-101' || selectedTag === 'WELD-201') {
+    if (
+      selectedTag === 'BODY-101'
+      || selectedTag === 'CONV-101'
+      || selectedTag === 'WELD-201'
+      || selectedTag === 'PAINT-301'
+    ) {
       stationPreviewAnimation.play(selectedTag);
     } else {
       stationPreviewAnimation.cancel();
