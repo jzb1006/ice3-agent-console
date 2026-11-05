@@ -21,11 +21,11 @@
 
 ## 演示资产
 
-- 版本库中的演示使用虚构污水处理厂。
-- `equipment.json` 必须从同一版本的 Tileset `bindings.json` 生成；设备 Bounds、
-  Selection ID 和内置剧本目标不得引用旧 Source Asset。
+- 版本库中的演示使用前端参数化生成的虚拟汽车制造工厂。
+- 默认演示不依赖外部 Runtime Asset；设备 Bounds、Selection ID 和内置剧本目标来自
+  `shared/factory.ts`。
 - 不得加入真实客户模型、派生模型、截图或提取纹理。
-- 静态构建只包含虚构的 runtime asset tree，并且无需后端或凭据即可工作。
+- 静态构建无需后端或凭据即可工作。
 - 完成 Asset 相关工作前，检查 Git status、tracked files、ignore rules 和 staged content。
 
 ## 交付

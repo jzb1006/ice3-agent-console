@@ -35,9 +35,6 @@ npm run dev
 - 健康检查：`http://127.0.0.1:8099/health`
 
 调试时可使用 `?autoplay=0` 关闭开场巡游。
-使用 `?scene=tileset&autoplay=0` 可以加载仓库内已准备的污水处理厂 Tileset，检查分块加载、
-LOD 和设备 Selection；该模式不播放汽车制造巡游。
-
 ## 聚焦测试
 
 ```bash

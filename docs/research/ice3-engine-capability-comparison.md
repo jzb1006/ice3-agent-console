@@ -1,5 +1,11 @@
 # ICE3 引擎能力与引擎类别比较
 
+> Document ID: ICE3-AGENT-REF-003
+>
+> Status: Historical
+>
+> Owner: ICE3 Agent Console maintainers
+
 > 研究日期：2026-11-04
 >
 > 研究范围：公开 `ice3` Runtime、配套 Studio 文档，以及当前 `ice3-agent-console` 的实际调用。

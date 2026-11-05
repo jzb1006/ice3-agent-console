@@ -44,9 +44,8 @@ https://jzb1006.github.io/ice3-agent-console/
 2. 使用 `.nvmrc` 指定的 Node.js 24.22.1。
 3. 使用 lockfile 安装 Agent Console 依赖和公开 `ice3` package。
 4. 运行文档门禁、类型检查和单元测试。
-5. 执行 `npm run build:demo`。构建前仍会校验并生成遗留 Runtime Asset 的
-   `equipment.json`；当前汽车场景的 Bounds、Selection ID 和静态剧本来自共享的
-   `shared/factory.ts`，不依赖该 Tileset。
+5. 执行 `npm run build:demo`。汽车场景的 Bounds、Selection ID 和静态剧本来自共享的
+   `shared/factory.ts`，不依赖外部 Runtime Asset。
 6. 将 `dist/` 作为 Pages artifact 发布。
 
 仓库 Settings 中的 Pages Source 必须保持为 `GitHub Actions`。不要把 151 MiB 左右的
@@ -87,8 +86,7 @@ G-5M03M076TL
 Static build 包含：
 
 - HTML、CSS、JavaScript 和 source map。
-- 包含静态页面、本地 Agent 和可选的 Runtime `tiled/` Asset tree；`?scene=tileset` 会加载仓库中
-  已准备的污水处理厂 Tileset。
+- 包含静态页面、参数化场景和本地 Agent。
 - 不包含 source GLB、prepared monolithic GLB、客户数据或凭据。
 
 ## URL 参数
@@ -96,16 +94,13 @@ Static build 包含：
 - `?autoplay=0` 关闭开场巡游。
 - `?demo=1` 明确选择 browser-local transport。
 - `?demo=0` 选择 server transport，并要求 service 可达。
-- `?scene=procedural` 使用参数化汽车工厂；`?scene=tileset` 使用已准备的 Tileset 场景。
 
 ## 预期结果
 
 无后端部署路径可以打开并加载参数化汽车制造工厂，并通过 local event stream 执行所有
-内置场景。Tileset 模式用于资产加载和设备语义验证，汽车制造巡游仅在参数化场景启用。
+内置场景。
 
-默认 static build 不包含其它演示 Asset。需要发布其它合规 3D 模型时，必须保留完整的
-Prepared Tileset 和设备清单，并按 [接入其它 3D 模型](other-models.md)调整 custom
-deployment。
+需要发布其它合规 3D 模型时，按 [接入其它 3D 模型](other-models.md)配置独立部署。
 
 ## 关联文档
 

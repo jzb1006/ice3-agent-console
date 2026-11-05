@@ -30,6 +30,7 @@
 |---|---|---|---|
 | `ICE3-AGENT-REF-001` | [Event 和 Scene Tool 协议](reference/protocol.md) | Active | event stream、tool、payload 和失败行为 |
 | `ICE3-AGENT-REF-002` | [Runtime Asset 交付](reference/asset-delivery.md) | Active | Tileset 分块、粗模/细模、业务绑定、首屏 loading 和发布验证 |
+| `ICE3-AGENT-REF-003` | [ICE3 引擎能力与引擎类别比较](research/ice3-engine-capability-comparison.md) | Historical | 能力边界、优势和引擎类别比较记录 |
 | `ICE3-AGENT-ADR-001` | [Agent 和 Scene 边界](decisions/0001-agent-scene-boundary.md) | Active | 让编排逻辑留在 engine 内部实现之外 |
 | `ICE3-AGENT-ADR-002` | [脚本与 Real-Model 传输](decisions/0002-scripted-and-real-model-transport.md) | Active | 明确 runtime 模式和失败行为 |
 
