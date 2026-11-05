@@ -65,6 +65,12 @@ export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLik
       max: [x + 2.7, y + 3.3, z + 3.2],
     };
   }
+  if (item.tag === 'OVEN-302') {
+    return {
+      min: [x - 2.9, y - 1.8, z - 3.05],
+      max: [x + 2.9, y + 4.65, z + 3.05],
+    };
+  }
   const [width, height, depth] = item.size;
   return {
     min: [x - width / 2, y - height / 2, z - depth / 2],
@@ -351,6 +357,81 @@ export function addPaintBoothStation(
   return { parts };
 }
 
+export function addDryingOvenStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+): FactoryStationVisual {
+  const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    const visualPart = mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      {
+        selectionId: item.selectionId,
+        edgeColor,
+      },
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
+  };
+
+  part('oven-floor', [5.4, 0.24, 5.9], [0, -1.55, 0], '#263d43', '#739692');
+  part('wall-left', [0.28, 3.2, 5.8], [-2.7, 0, 0], '#6e5646', '#e3c6a9');
+  part('wall-right', [0.28, 3.2, 5.8], [2.7, 0, 0], '#6e5646', '#e3c6a9');
+  part('roof', [5.4, 0.28, 5.8], [0, 3.02, 0], '#7a604c', '#f1d1ae');
+  part('front-header', [5.2, 0.72, 0.3], [0, 2.45, -2.72], '#8d684d', '#f4d1ae');
+  part('front-column-left', [0.72, 2.5, 0.3], [-2.25, 0.9, -2.72], '#8d684d', '#f4d1ae');
+  part('front-column-right', [0.72, 2.5, 0.3], [2.25, 0.9, -2.72], '#8d684d', '#f4d1ae');
+  part('rear-header', [5.2, 0.72, 0.3], [0, 2.45, 2.72], '#765643', '#e8c2a2');
+  part('rear-column-left', [0.72, 2.5, 0.3], [-2.25, 0.9, 2.72], '#765643', '#e8c2a2');
+  part('rear-column-right', [0.72, 2.5, 0.3], [2.25, 0.9, 2.72], '#765643', '#e8c2a2');
+
+  [-2, -1, 0, 1, 2].forEach((offsetX, index) => {
+    part(`roller-${index}`, [0.32, 0.2, 5.15], [offsetX, -0.95, 0], '#c7d6cf', '#f2fff7');
+  });
+  part('entry-guide-near', [0.18, 0.35, 5.2], [-2.46, -0.42, 0], '#d1a842', '#ffe998');
+  part('entry-guide-far', [0.18, 0.35, 5.2], [2.46, -0.42, 0], '#d1a842', '#ffe998');
+
+  [
+    [-1.7, 2.64, -1.55],
+    [0, 2.64, -1.55],
+    [1.7, 2.64, -1.55],
+    [-1.7, 2.64, 1.55],
+    [0, 2.64, 1.55],
+    [1.7, 2.64, 1.55],
+  ].forEach(([offsetX, offsetY, offsetZ], index) => {
+    part(`heat-glow-${index}`, [0.72, 0.16, 0.24], [offsetX, offsetY, offsetZ], '#e28b4e', '#ffd4a9');
+  });
+  part('exhaust-stack', [0.72, 1.2, 0.72], [1.75, 3.72, 1.35], '#536d70', '#c8e4db');
+  part('exhaust-cap', [1.05, 0.16, 1.05], [1.75, 4.36, 1.35], '#78908e', '#ddf2e9');
+  [
+    [-0.38, 0, 0],
+    [0.38, 0, 0],
+    [0, 0, -0.38],
+  ].forEach(([offsetX, offsetY, offsetZ], index) => {
+    part(`exhaust-fan-${index}`, [0.14, 0.1, 0.72], [1.75 + offsetX, 4.48 + offsetY, 1.35 + offsetZ], '#bad0c9', '#f0fff8');
+  });
+
+  part('status-pole', [0.12, 0.95, 0.12], [2.25, 1.15, 2.98], '#6d8784', '#c4e6da');
+  part('status-red', [0.26, 0.18, 0.26], [2.25, 1.68, 2.98], '#bf4e4a', '#ffaaa0');
+  part('status-yellow', [0.26, 0.18, 0.26], [2.25, 1.44, 2.98], '#d5a83e', '#ffe99a');
+  part('status-green', [0.26, 0.18, 0.26], [2.25, 1.2, 2.98], '#54b58b', '#b1f5d1');
+  for (let index = 0; index < 6; index += 1) {
+    const glow = parts.get(`heat-glow-${index}`);
+    if (glow) glow.visible = false;
+  }
+  return { parts };
+}
+
 function addFactoryEquipment(
   scene: ICEScene,
   stationVisuals: Map<string, FactoryStationVisual>,
@@ -389,6 +470,8 @@ function addFactoryEquipment(
       stationVisuals.set(item.tag, addWeldingRobotStation(scene, item));
     } else if (item.tag === 'PAINT-301') {
       stationVisuals.set(item.tag, addPaintBoothStation(scene, item));
+    } else if (item.tag === 'OVEN-302') {
+      stationVisuals.set(item.tag, addDryingOvenStation(scene, item));
     } else {
       scene.addChild(mesh(
         `equipment-${item.tag}`,
@@ -637,6 +720,52 @@ export function createPaintBoothMotion(
   };
 }
 
+export function createDryingOvenMotion(
+  visual: FactoryStationVisual | undefined,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    for (let index = 0; index < 6; index += 1) {
+      const glow = parts?.get(`heat-glow-${index}`);
+      if (glow) glow.visible = false;
+    }
+    const green = parts?.get('status-green');
+    const yellow = parts?.get('status-yellow');
+    if (green) green.visible = true;
+    if (yellow) yellow.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const rollerAngle = progress * Math.PI * 10;
+      for (let index = 0; index < 5; index += 1) {
+        const roller = parts.get(`roller-${index}`);
+        if (!roller) continue;
+        const base = roller.position;
+        roller.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], rollerAngle));
+      }
+      const fanAngle = -progress * Math.PI * 8;
+      for (let index = 0; index < 3; index += 1) {
+        const fan = parts.get(`exhaust-fan-${index}`);
+        if (!fan) continue;
+        const base = fan.position;
+        fan.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], fanAngle));
+      }
+      const heatActive = Math.sin(progress * Math.PI * 12) > -0.25;
+      for (let index = 0; index < 6; index += 1) {
+        const glow = parts.get(`heat-glow-${index}`);
+        if (glow) glow.visible = heatActive;
+      }
+      const green = parts.get('status-green');
+      const yellow = parts.get('status-yellow');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+      if (yellow) yellow.visible = !green?.visible;
+    },
+    reset,
+  };
+}
+
 function createProductionVehicle(scene: ICEScene): ProductionVehicle {
   const root = new ICENode({
     id: 'production-run-vehicle',
@@ -750,6 +879,7 @@ function createProductionAnimation(
     ['CONV-101', createConveyorStationMotion(stationVisuals.get('CONV-101'))],
     ['WELD-201', createWeldingRobotMotion(stationVisuals.get('WELD-201'))],
     ['PAINT-301', createPaintBoothMotion(stationVisuals.get('PAINT-301'))],
+    ['OVEN-302', createDryingOvenMotion(stationVisuals.get('OVEN-302'))],
   ]);
   let active: AbortController | null = null;
   let disposed = false;
@@ -847,12 +977,14 @@ function createStationPreviewAnimation(
     ['CONV-101', createConveyorStationMotion(stationVisuals.get('CONV-101'))],
     ['WELD-201', createWeldingRobotMotion(stationVisuals.get('WELD-201'))],
     ['PAINT-301', createPaintBoothMotion(stationVisuals.get('PAINT-301'))],
+    ['OVEN-302', createDryingOvenMotion(stationVisuals.get('OVEN-302'))],
   ]);
   const durationByTag: ReadonlyMap<string, number> = new Map([
     ['BODY-101', 1_400],
     ['CONV-101', 1_400],
     ['WELD-201', 1_700],
     ['PAINT-301', 1_800],
+    ['OVEN-302', 1_800],
   ]);
   let active: {
     readonly controller: AbortController;
@@ -1122,6 +1254,7 @@ export async function createFactorySceneController(
       || selectedTag === 'CONV-101'
       || selectedTag === 'WELD-201'
       || selectedTag === 'PAINT-301'
+      || selectedTag === 'OVEN-302'
     ) {
       stationPreviewAnimation.play(selectedTag);
     } else {

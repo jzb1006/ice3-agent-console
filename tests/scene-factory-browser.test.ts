@@ -4,12 +4,14 @@ import { ICEScene } from 'ice3';
 import { FACTORY_EQUIPMENT } from '../shared/factory.ts';
 import {
   addBodyLoadingStation,
+  addDryingOvenStation,
   addMainConveyorStation,
   addPaintBoothStation,
   addWeldingRobotStation,
   boundsForEquipment,
   createBodyStationMotion,
   createConveyorStationMotion,
+  createDryingOvenMotion,
   createPaintBoothMotion,
   createWeldingRobotMotion,
 } from '../src/scene/factory-browser.ts';
@@ -136,4 +138,38 @@ test('PAINT-301 booth preserves selection identity and animates the spray gantry
   motion.reset();
   expect(gantry.toJSON().matrix).toBeUndefined();
   expect(mist.visible).toBe(false);
+});
+
+test('OVEN-302 drying oven preserves selection identity and animates heat flow', () => {
+  const scene = new ICEScene({ id: 'test-scene' });
+  const oven = FACTORY_EQUIPMENT.find((item) => item.tag === 'OVEN-302');
+  if (!oven) throw new Error('OVEN-302 fixture is missing');
+
+  const visual = addDryingOvenStation(scene, oven);
+  expect(scene.children.length).toBeGreaterThan(20);
+  expect(scene.children.every((child) => (
+    child.selectionId === oven.selectionId
+  ))).toBe(true);
+  const ovenBounds = boundsForEquipment(oven);
+  expect(ovenBounds.min[0]).toBeCloseTo(3.6);
+  expect(ovenBounds.min[1]).toBeCloseTo(-0.3);
+  expect(ovenBounds.min[2]).toBeCloseTo(-3.05);
+  expect(ovenBounds.max[0]).toBeCloseTo(9.4);
+  expect(ovenBounds.max[1]).toBeCloseTo(6.15);
+  expect(ovenBounds.max[2]).toBeCloseTo(3.05);
+
+  const roller = visual.parts.get('roller-0');
+  const heatGlow = visual.parts.get('heat-glow-0');
+  const fan = visual.parts.get('exhaust-fan-0');
+  if (!roller || !heatGlow || !fan) throw new Error('OVEN-302 motion fixtures are missing');
+
+  const motion = createDryingOvenMotion(visual);
+  motion.update(0.2);
+  expect(roller.toJSON().matrix).toBeDefined();
+  expect(fan.toJSON().matrix).toBeDefined();
+  expect(heatGlow.visible).toBe(true);
+  motion.reset();
+  expect(roller.toJSON().matrix).toBeUndefined();
+  expect(fan.toJSON().matrix).toBeUndefined();
+  expect(heatGlow.visible).toBe(false);
 });
