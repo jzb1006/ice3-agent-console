@@ -25,3 +25,13 @@ test('preserves a query-free path from a nested page URL', () => {
     'https://example.com/apps/agent-console/assets/automotive-plant/tiled/tileset.json',
   );
 });
+
+test('resolves an alternate prepared asset root without changing the demo default', () => {
+  expect(resolveDemoAssetUrl(
+    'https://example.com/apps/agent-console/',
+    'tiled/tileset.json',
+    'assets/wastewater-plant',
+  )).toBe(
+    'https://example.com/apps/agent-console/assets/wastewater-plant/tiled/tileset.json',
+  );
+});

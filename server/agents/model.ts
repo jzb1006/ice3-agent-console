@@ -12,6 +12,13 @@ const SYSTEM_PROMPT = [
   '不要编造设备位号；不确定时先调用 find_equipment。',
 ].join('\n');
 
+const TILESET_SYSTEM_PROMPT = [
+  '你是工业三维现场的讲解助手。',
+  '需要操作场景时必须调用已提供的场景工具。',
+  '只讨论当前污水处理厂及其设备、工艺连接和视图。',
+  '不要编造设备位号；不确定时先调用 find_equipment。',
+].join('\n');
+
 function contextText(input: RunAgentInput): string {
   if (!input.context?.length) return '';
   return input.context
@@ -19,12 +26,19 @@ function contextText(input: RunAgentInput): string {
     .join('\n');
 }
 
+function systemPrompt(input: RunAgentInput): string {
+  const mode = input.context?.find((entry) => entry.description === 'scene mode')?.value;
+  return mode === 'tileset' ? TILESET_SYSTEM_PROMPT : SYSTEM_PROMPT;
+}
+
 function buildMessages(input: RunAgentInput): readonly ModelMessage[] {
   const context = contextText(input);
   return [
     {
       role: 'system',
-      content: context ? `${SYSTEM_PROMPT}\n\n当前场景：\n${context}` : SYSTEM_PROMPT,
+      content: context
+        ? `${systemPrompt(input)}\n\n当前场景：\n${context}`
+        : systemPrompt(input),
     },
     ...input.messages.flatMap((message): ModelMessage[] => {
       if (message.role !== 'user' && message.role !== 'assistant') return [];

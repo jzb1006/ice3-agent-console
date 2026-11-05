@@ -3,6 +3,7 @@ import {
   ICEOrbitController,
   ICEPerspectiveCamera,
   ICETilesetLoader,
+  type ICETilesetEvent,
   type ICEGeometryBounds,
   type ICETilesetHandle,
 } from 'ice3';
@@ -12,7 +13,7 @@ import type {
   SceneCommandResult,
   SceneSnapshot,
 } from '../../shared/scene.js';
-import { DEMO_ASSET } from '../../shared/demo-asset.js';
+import { TILESET_ASSET } from '../../shared/demo-asset.js';
 import { resolveDemoAssetUrl } from './asset-url.js';
 import { moveCamera, type CameraPose } from './camera-controller.js';
 import { SceneCommandExecutor } from './controller.js';
@@ -20,6 +21,8 @@ import type {
   EquipmentRecord,
   ICEGeometryBoundsLike,
   SceneController,
+  SceneStatusListener,
+  SceneStatusUpdate,
 } from './types.js';
 import {
   frameBounds,
@@ -36,8 +39,24 @@ interface BrowserSceneOptions {
   readonly stage: HTMLElement;
   readonly assetBaseUri?: string;
   readonly visibleViewport?: () => ScreenRect;
+  readonly onStatus?: SceneStatusListener;
   readonly onSelection?: (ids: readonly string[]) => void;
   readonly onUserCameraIntent?: () => void;
+}
+
+function tilesetReadyStatus(
+  stats: ICETilesetEvent['stats'],
+): SceneStatusUpdate {
+  if (stats.failed > 0) {
+    return {
+      text: `场景已就绪，但有 ${stats.failed} 个分块加载失败`,
+      kind: 'error',
+    };
+  }
+  return {
+    text: `场景已就绪 · LOD ${stats.lod.resident}/${stats.lod.target} · 驻留 ${stats.resident}/${stats.total} 个分块`,
+    kind: 'ready',
+  };
 }
 
 type SceneEngineFactory = (
@@ -96,7 +115,8 @@ export async function createSceneController(
   const assetBaseUri = options.assetBaseUri ?? document.baseURI;
   const manifestResponse = await fetch(resolveDemoAssetUrl(
     assetBaseUri,
-    DEMO_ASSET.manifestPath,
+    TILESET_ASSET.manifestPath,
+    TILESET_ASSET.rootPath,
   ));
   if (!manifestResponse.ok) {
     throw new Error(
@@ -133,9 +153,47 @@ export async function createSceneController(
     target: [0, 0, 0],
   });
   const loader = new ICETilesetLoader(engine, { camera });
+  options.onStatus?.({ text: '正在加载工业场景资源', kind: 'loading' });
   const handle: ICETilesetHandle = await loader.open(
-    resolveDemoAssetUrl(assetBaseUri, DEMO_ASSET.tilesetPath),
+    resolveDemoAssetUrl(
+      assetBaseUri,
+      TILESET_ASSET.tilesetPath,
+      TILESET_ASSET.rootPath,
+    ),
   );
+  const updateTilesetStatus = (event: { readonly param?: ICETilesetEvent }): void => {
+    const stats = event.param?.stats;
+    if (!stats) return;
+    const progress = stats.total > 0
+      ? `，已驻留 ${stats.resident}/${stats.total} 个分块`
+      : '';
+    options.onStatus?.({
+      text: `正在准备工业场景${progress}`,
+      kind: 'loading',
+    });
+  };
+  handle.on<ICETilesetEvent>('TILESET_TILE_LOADING', updateTilesetStatus);
+  handle.on<ICETilesetEvent>('TILESET_TILE_LOADED', updateTilesetStatus);
+  handle.on<ICETilesetEvent>('TILESET_LOD_CHANGED', (event) => {
+    const stats = event.param?.stats;
+    if (!stats) return;
+    options.onStatus?.({
+      text: `正在调整场景细节 · LOD ${stats.lod.resident}/${stats.lod.target}`,
+      kind: stats.failed ? 'error' : 'loading',
+    });
+  });
+  handle.on<ICETilesetEvent>('TILESET_TILE_FAILED', (event) => {
+    const stats = event.param?.stats;
+    options.onStatus?.({
+      text: `场景分块加载失败${stats ? `，失败 ${stats.failed} 个` : ''}`,
+      kind: 'error',
+    });
+  });
+  handle.on<ICETilesetEvent>('TILESET_IDLE', (event) => {
+    const stats = event.param?.stats;
+    if (stats) options.onStatus?.(tilesetReadyStatus(stats));
+    else options.onStatus?.({ text: '场景已就绪', kind: 'ready' });
+  });
   let orbit = new ICEOrbitController(engine, camera).start();
   engine.setScene(handle.scene).setCamera(camera).start();
 
@@ -331,6 +389,7 @@ export async function createSceneController(
     },
     async whenReady(): Promise<void> {
       await handle.whenReady();
+      options.onStatus?.(tilesetReadyStatus(handle.stats));
     },
     dispose(): void {
       if (disposed) return;

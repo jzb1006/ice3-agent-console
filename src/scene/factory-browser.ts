@@ -23,6 +23,7 @@ import type {
   EquipmentRecord,
   ICEGeometryBoundsLike,
   SceneController,
+  SceneStatusListener,
 } from './types.js';
 import {
   frameEquipment,
@@ -38,6 +39,7 @@ import { applyUserSelection } from './user-selection.js';
 interface BrowserSceneOptions {
   readonly stage: HTMLElement;
   readonly visibleViewport?: () => ScreenRect;
+  readonly onStatus?: SceneStatusListener;
   readonly onSelection?: (ids: readonly string[]) => void;
   readonly onProductionStage?: (selectionId: string | null) => void;
   readonly onUserCameraIntent?: () => void;
@@ -49,6 +51,12 @@ export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLik
     return {
       min: [x - 2.8, y - 1.55, z - 2.35],
       max: [x + 2.8, y + 1.25, z + 2.35],
+    };
+  }
+  if (item.tag === 'WELD-201') {
+    return {
+      min: [x - 2.6, y - 1.55, z - 2.9],
+      max: [x + 2.6, y + 2.8, z + 2.9],
     };
   }
   const [width, height, depth] = item.size;
@@ -233,6 +241,58 @@ export function addMainConveyorStation(
   return { parts };
 }
 
+export function addWeldingRobotStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+): FactoryStationVisual {
+  const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    const visualPart = mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      {
+        selectionId: item.selectionId,
+        edgeColor,
+      },
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
+  };
+
+  part('island-base', [4.3, 0.24, 5.5], [0, -1.3, 0], '#293e46', '#739692');
+  part('weld-table', [2.8, 0.18, 2.4], [0, -0.55, 0.25], '#657f82', '#d8eee3');
+  part('fixture-left', [0.18, 0.82, 0.18], [-1.05, -0.1, 0.25], '#d0a744', '#ffea9d');
+  part('fixture-right', [0.18, 0.82, 0.18], [1.05, -0.1, 0.25], '#d0a744', '#ffea9d');
+
+  part('safety-post-near', [0.2, 2.4, 0.2], [-2.05, 0.35, -2.45], '#d0a744', '#ffe99c');
+  part('safety-post-far', [0.2, 2.4, 0.2], [2.05, 0.35, 2.45], '#d0a744', '#ffe99c');
+  part('safety-beam-near', [4.3, 0.2, 0.2], [0, 1.55, -2.45], '#5a7477', '#c9e5db');
+  part('safety-beam-far', [4.3, 0.2, 0.2], [0, 1.55, 2.45], '#5a7477', '#c9e5db');
+
+  part('robot-base', [0.85, 0.72, 0.85], [-0.1, 0.05, -1.45], '#bd6844', '#ffd0ac');
+  part('robot-arm-lower', [0.34, 1.7, 0.34], [-0.1, 1.15, -1.45], '#d47a48', '#ffd4b0');
+  part('robot-arm-upper', [1.8, 0.3, 0.3], [0.45, 2.25, -1.45], '#e18b4f', '#ffe0bc');
+  part('weld-torch', [0.26, 0.62, 0.26], [1.25, 1.92, -1.45], '#718e90', '#d4eee3');
+  part('weld-spark-0', [0.18, 0.18, 0.18], [1.25, 1.5, -1.45], '#f0c64b', '#fff1a1');
+  part('weld-spark-1', [0.14, 0.14, 0.14], [1.48, 1.63, -1.45], '#77d2c0', '#d3fff1');
+  part('weld-spark-2', [0.12, 0.12, 0.12], [1.03, 1.68, -1.45], '#f0c64b', '#fff1a1');
+
+  part('status-pole', [0.12, 0.95, 0.12], [1.75, 1.15, 2.05], '#6d8784', '#c4e6da');
+  part('status-red', [0.26, 0.18, 0.26], [1.75, 1.68, 2.05], '#bf4e4a', '#ffaaa0');
+  part('status-yellow', [0.26, 0.18, 0.26], [1.75, 1.44, 2.05], '#d5a83e', '#ffe99a');
+  part('status-green', [0.26, 0.18, 0.26], [1.75, 1.2, 2.05], '#54b58b', '#b1f5d1');
+  return { parts };
+}
+
 function addFactoryEquipment(
   scene: ICEScene,
   stationVisuals: Map<string, FactoryStationVisual>,
@@ -267,6 +327,8 @@ function addFactoryEquipment(
       ));
     } else if (item.tag === 'CONV-101') {
       stationVisuals.set(item.tag, addMainConveyorStation(scene, item));
+    } else if (item.tag === 'WELD-201') {
+      stationVisuals.set(item.tag, addWeldingRobotStation(scene, item));
     } else {
       scene.addChild(mesh(
         `equipment-${item.tag}`,
@@ -415,6 +477,58 @@ export function createConveyorStationMotion(
   };
 }
 
+export function createWeldingRobotMotion(
+  visual: FactoryStationVisual | undefined,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    for (const suffix of ['0', '1', '2']) {
+      const spark = parts?.get(`weld-spark-${suffix}`);
+      if (spark) spark.visible = false;
+    }
+    const green = parts?.get('status-green');
+    const yellow = parts?.get('status-yellow');
+    if (green) green.visible = true;
+    if (yellow) yellow.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const swing = 0.48 * Math.sin(progress * Math.PI * 2);
+      const lowerArm = parts.get('robot-arm-lower');
+      if (lowerArm) {
+        const base = lowerArm.position;
+        lowerArm.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], swing));
+      }
+      const upperArm = parts.get('robot-arm-upper');
+      if (upperArm) {
+        const base = upperArm.position;
+        upperArm.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], -swing * 1.35));
+      }
+      const torch = parts.get('weld-torch');
+      if (torch) {
+        const base = torch.position;
+        torch.setLocalMatrix(translationMatrix(
+          base.x + Math.sin(progress * Math.PI * 2) * 0.22,
+          base.y + Math.cos(progress * Math.PI * 2) * 0.12,
+          base.z,
+        ));
+      }
+      const sparkActive = Math.sin(progress * Math.PI * 12) > 0.2;
+      for (const suffix of ['0', '1', '2']) {
+        const spark = parts.get(`weld-spark-${suffix}`);
+        if (spark) spark.visible = sparkActive;
+      }
+      const green = parts.get('status-green');
+      const yellow = parts.get('status-yellow');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+      if (yellow) yellow.visible = !green?.visible;
+    },
+    reset,
+  };
+}
+
 function createProductionVehicle(scene: ICEScene): ProductionVehicle {
   const root = new ICENode({
     id: 'production-run-vehicle',
@@ -526,6 +640,7 @@ function createProductionAnimation(
   const stationMotions = new Map<string, FactoryStationMotion>([
     ['BODY-101', createBodyStationMotion(stationVisuals.get('BODY-101'))],
     ['CONV-101', createConveyorStationMotion(stationVisuals.get('CONV-101'))],
+    ['WELD-201', createWeldingRobotMotion(stationVisuals.get('WELD-201'))],
   ]);
   let active: AbortController | null = null;
   let disposed = false;
@@ -621,10 +736,12 @@ function createStationPreviewAnimation(
   const stationMotions = new Map<string, FactoryStationMotion>([
     ['BODY-101', createBodyStationMotion(stationVisuals.get('BODY-101'))],
     ['CONV-101', createConveyorStationMotion(stationVisuals.get('CONV-101'))],
+    ['WELD-201', createWeldingRobotMotion(stationVisuals.get('WELD-201'))],
   ]);
   const durationByTag: ReadonlyMap<string, number> = new Map([
     ['BODY-101', 1_400],
     ['CONV-101', 1_400],
+    ['WELD-201', 1_700],
   ]);
   let active: {
     readonly controller: AbortController;
@@ -699,6 +816,7 @@ function radius(bounds: ICEGeometryBoundsLike): number {
 export async function createFactorySceneController(
   options: BrowserSceneOptions,
 ): Promise<SceneController> {
+  options.onStatus?.({ text: '正在构建参数化场景', kind: 'loading' });
   const engine = await new ICE3({ renderer: 'webgl2' }).initAsync(options.stage);
   engine.setBackgroundColor('#071317');
   const scene = new ICEScene({ id: 'automotive-factory-scene' });
@@ -888,7 +1006,7 @@ export async function createFactorySceneController(
     );
     logicalSelection = ids;
     const selectedTag = ids[0] ? tagForSelectionId(ids[0]) : undefined;
-    if (selectedTag === 'BODY-101' || selectedTag === 'CONV-101') {
+    if (selectedTag === 'BODY-101' || selectedTag === 'CONV-101' || selectedTag === 'WELD-201') {
       stationPreviewAnimation.play(selectedTag);
     } else {
       stationPreviewAnimation.cancel();

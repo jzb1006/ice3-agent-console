@@ -36,6 +36,14 @@ const PROJECT_LINKS = [
   },
 ] as const;
 
+export interface ChatPanelOptions {
+  readonly title?: string;
+  readonly ariaLabel?: string;
+  readonly promptPlaceholder?: string;
+  readonly introPrompt?: string;
+  readonly introExamples?: string;
+}
+
 export class ChatPanel {
   readonly element: HTMLElement;
   readonly form: HTMLFormElement;
@@ -45,18 +53,27 @@ export class ChatPanel {
   readonly composerArea: HTMLElement;
   private readonly scroller: HTMLElement;
   private readonly localUsers: LocalUserMessage[] = [];
+  private readonly introPrompt: string;
+  private readonly introExamples: string;
   private listener: ((text: string) => void) | null = null;
 
-  constructor(host: HTMLElement) {
+  constructor(host: HTMLElement, options: ChatPanelOptions = {}) {
     const document = host.ownerDocument;
+    const title = options.title ?? '汽车制造现场助手';
+    const ariaLabel = options.ariaLabel ?? title;
+    const promptPlaceholder = options.promptPlaceholder
+      ?? '例如：带我看车身焊装线';
+    this.introPrompt = options.introPrompt ?? '选择设备，或者直接问我：';
+    this.introExamples = options.introExamples
+      ?? '查看整厂 · 定位焊装机器人 · 讲解总装流程';
     this.element = document.createElement('aside');
     this.element.className = 'conversation-panel';
-    this.element.setAttribute('aria-label', '汽车制造现场助手');
+    this.element.setAttribute('aria-label', ariaLabel);
     this.element.innerHTML = `
       <header class="conversation-header">
         <div>
           <span class="eyebrow">ICE3 FIELD AGENT</span>
-          <h1>汽车制造现场助手</h1>
+          <h1 data-role="assistant-title"></h1>
         </div>
         <div class="conversation-header__actions">
           <span class="agent-state" data-role="agent-state">就绪</span>
@@ -75,7 +92,7 @@ export class ChatPanel {
         <form class="composer" data-role="composer">
           <label class="sr-only" for="agent-command">向现场助手提问</label>
           <textarea id="agent-command" data-role="composer-input"
-            rows="1" placeholder="例如：带我看车身焊装线"></textarea>
+            rows="1"></textarea>
           <button type="submit" data-role="composer-submit">发送</button>
         </form>
         <nav class="project-links" data-role="project-links"
@@ -92,8 +109,11 @@ export class ChatPanel {
     this.scroller = this.element.querySelector(
       '[data-role="conversation-scroll"]',
     )!;
-    this.form = this.element.querySelector('[data-role="composer"]')!;
+    this.element.querySelector<HTMLElement>('[data-role="assistant-title"]')!
+      .textContent = title;
     this.input = this.element.querySelector('[data-role="composer-input"]')!;
+    this.input.placeholder = promptPlaceholder;
+    this.form = this.element.querySelector('[data-role="composer"]')!;
     this.submit = this.element.querySelector(
       '[data-role="composer-submit"]',
     )!;
@@ -162,10 +182,13 @@ export class ChatPanel {
     if (state.items.length === 0 && this.localUsers.length === 0) {
       const intro = this.element.ownerDocument.createElement('article');
       intro.className = 'message message--assistant message--intro';
-      intro.innerHTML = [
-        '<p>选择设备，或者直接问我：</p>',
-        '<p><strong>查看整厂 · 定位焊装机器人 · 讲解总装流程</strong></p>',
-      ].join('');
+      const prompt = this.element.ownerDocument.createElement('p');
+      prompt.textContent = this.introPrompt;
+      const examples = this.element.ownerDocument.createElement('p');
+      const examplesStrong = this.element.ownerDocument.createElement('strong');
+      examplesStrong.textContent = this.introExamples;
+      examples.append(examplesStrong);
+      intro.append(prompt, examples);
       this.scroller.append(intro);
     }
     this.scrollToEnd();

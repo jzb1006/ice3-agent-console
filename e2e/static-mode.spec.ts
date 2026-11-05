@@ -65,6 +65,24 @@ test('runs the static demo without an Agent server', async ({ page }) => {
   expect(backendRequests).toEqual([]);
 });
 
+test('loads the prepared Tileset scene when explicitly requested', async ({
+  page,
+}) => {
+  const tilesetRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/assets/wastewater-plant/tiled/tileset.json')) {
+      tilesetRequests.push(request.url());
+    }
+  });
+  await page.goto('http://127.0.0.1:8111/?demo=1&autoplay=0&scene=tileset');
+  await expect(page.locator('[data-role="scene-status"]'))
+    .toHaveText(/场景已就绪/, { timeout: 60_000 });
+  expect(await page.evaluate(() => (
+    window.__ICE3_AGENT_CONSOLE__.sceneMode()
+  ))).toBe('tileset');
+  expect(tilesetRequests).toHaveLength(1);
+});
+
 test('runs a grouped system scenario in the static build', async ({ page }) => {
   const backendRequests: string[] = [];
   page.on('request', (request) => {

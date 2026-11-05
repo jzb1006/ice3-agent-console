@@ -17,6 +17,15 @@ export interface ICEGeometryBoundsLike {
   readonly max: readonly [number, number, number];
 }
 
+export type SceneStatusKind = 'loading' | 'ready' | 'error';
+
+export interface SceneStatusUpdate {
+  readonly text: string;
+  readonly kind: SceneStatusKind;
+}
+
+export type SceneStatusListener = (status: SceneStatusUpdate) => void;
+
 export interface EquipmentRecord {
   readonly selectionId: string;
   readonly name: string;

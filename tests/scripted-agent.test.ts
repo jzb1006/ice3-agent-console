@@ -104,6 +104,24 @@ test('uses current equipment context for a follow-up explanation', async () => {
   expect(names).toContain('highlight_equipment');
 });
 
+test('keeps the local plan generic for a prepared Tileset scene', async () => {
+  const request = input('讲讲这个设备');
+  request.context = [
+    { description: 'scene mode', value: 'tileset' },
+    {
+      description: 'selected equipment',
+      value: 'ice3-virtual-wwtp/equipment/SC-101',
+    },
+  ];
+  const toolCalls: string[] = [];
+  for await (const event of createScriptedAgent({ delayMs: 0 }).run(request)) {
+    if (event.type === EventType.TOOL_CALL_START) {
+      toolCalls.push(String(event.toolCallName));
+    }
+  }
+  expect(toolCalls).toEqual(['focus_equipment', 'highlight_equipment']);
+});
+
 test('locates known equipment groups and clears focus', async () => {
   const toolNames = async (text: string): Promise<string[]> => {
     const names: string[] = [];

@@ -3,7 +3,7 @@ import { DEMO_ASSET } from '../../shared/demo-asset.js';
 export class StageView {
   readonly element: HTMLElement;
 
-  constructor(host: HTMLElement) {
+  constructor(host: HTMLElement, label: string = DEMO_ASSET.label) {
     this.element = host.ownerDocument.createElement('main');
     this.element.id = 'stage';
     this.element.dataset.role = 'stage';
@@ -12,9 +12,11 @@ export class StageView {
       <div class="scene-backdrop" aria-hidden="true"></div>
       <div class="brand-lockup">
         <span class="brand-mark">ICE3</span>
-        <span>${DEMO_ASSET.label}</span>
+        <span data-role="scene-label"></span>
       </div>
     `;
+    this.element.querySelector<HTMLElement>('[data-role="scene-label"]')!
+      .textContent = label;
     host.append(this.element);
   }
 

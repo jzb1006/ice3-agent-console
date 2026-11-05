@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import {
   resolveAutoplay,
   resolveDemoMode,
+  resolveSceneMode,
 } from '../src/app/mode.js';
 
 test('selects the build default for missing and invalid values', () => {
@@ -19,4 +20,11 @@ test('accepts explicit boolean values', () => {
   expect(resolveDemoMode('?demo=false', true)).toBe(false);
   expect(resolveAutoplay('?autoplay=1', false)).toBe(true);
   expect(resolveAutoplay('?autoplay=0', true)).toBe(false);
+});
+
+test('selects the requested scene adapter and preserves the procedural default', () => {
+  expect(resolveSceneMode('', 'procedural')).toBe('procedural');
+  expect(resolveSceneMode('?scene=invalid', 'procedural')).toBe('procedural');
+  expect(resolveSceneMode('?scene=tileset', 'procedural')).toBe('tileset');
+  expect(resolveSceneMode('?scene=procedural', 'tileset')).toBe('procedural');
 });

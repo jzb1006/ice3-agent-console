@@ -17,6 +17,7 @@ interface Window {
     };
     assistantMode(): 'scripted' | 'model';
     transportMode(): 'server' | 'local';
+    sceneMode(): 'procedural' | 'tileset';
     state(): unknown;
   };
 }

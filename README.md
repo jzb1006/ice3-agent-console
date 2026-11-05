@@ -80,8 +80,10 @@ URL 控制参数：
 
 - `?demo=1` 选择本地传输；`?demo=0` 为未来服务端接入保留。
 - `?autoplay=1` 或 `?autoplay=0` 控制开场巡游。
+- `?scene=procedural` 使用默认的参数化汽车工厂；`?scene=tileset` 加载已准备的污水处理厂 Tileset。
 
-无效值回退到构建默认值。
+Tileset 模式主要用于验证真实工业资产的分块加载、LOD 和设备 Selection；当前内置汽车巡游只在
+`procedural` 模式启用。无效值回退到构建默认值。
 
 ## 后续接入服务端模型
 

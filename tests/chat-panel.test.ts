@@ -47,6 +47,41 @@ test('submits a typed message and clears the input', () => {
   expect(panel.input.value).toBe('');
 });
 
+test('supports scene-specific assistant copy without changing the default profile', () => {
+  const dom = new JSDOM('<main></main>');
+  const panel = new ChatPanel(
+    dom.window.document.querySelector('main') as unknown as HTMLElement,
+    {
+      title: '污水处理现场助手',
+      promptPlaceholder: '查看当前设备',
+      introPrompt: '选择设备：',
+      introExamples: '查看全厂总览 · 讲解工艺连接',
+    },
+  );
+  expect(panel.element.getAttribute('aria-label')).toBe('污水处理现场助手');
+  expect(panel.element.querySelector('h1')?.textContent)
+    .toBe('污水处理现场助手');
+  expect(panel.input.placeholder).toBe('查看当前设备');
+  panel.render(initialState('thread-copy'));
+  expect(panel.element.textContent).toContain('讲解工艺连接');
+});
+
+test('renders scene copy as text rather than HTML', () => {
+  const dom = new JSDOM('<main></main>');
+  const panel = new ChatPanel(
+    dom.window.document.querySelector('main') as unknown as HTMLElement,
+    {
+      title: '<img src=x onerror=alert(1)>',
+      introExamples: '<em>safe text</em>',
+    },
+  );
+  panel.render(initialState('thread-safe-copy'));
+  expect(panel.element.querySelector('img')).toBeNull();
+  expect(panel.element.querySelector('em')).toBeNull();
+  expect(panel.element.textContent).toContain('<img src=x onerror=alert(1)>');
+  expect(panel.element.textContent).toContain('<em>safe text</em>');
+});
+
 test('collapses and restores the conversation panel', () => {
   const dom = new JSDOM('<main></main>');
   const panel = new ChatPanel(

@@ -5,9 +5,11 @@ import { FACTORY_EQUIPMENT } from '../shared/factory.ts';
 import {
   addBodyLoadingStation,
   addMainConveyorStation,
+  addWeldingRobotStation,
   boundsForEquipment,
   createBodyStationMotion,
   createConveyorStationMotion,
+  createWeldingRobotMotion,
 } from '../src/scene/factory-browser.ts';
 
 test('BODY-101 visual parts preserve the equipment selection identity', () => {
@@ -70,4 +72,35 @@ test('CONV-101 conveyor motion rotates rollers and restores their static pose', 
   expect(roller.toJSON().matrix).toBeDefined();
   motion.reset();
   expect(roller.toJSON().matrix).toBeUndefined();
+});
+
+test('WELD-201 robot island preserves selection identity and animated pose', () => {
+  const scene = new ICEScene({ id: 'test-scene' });
+  const welding = FACTORY_EQUIPMENT.find((item) => item.tag === 'WELD-201');
+  if (!welding) throw new Error('WELD-201 fixture is missing');
+
+  const visual = addWeldingRobotStation(scene, welding);
+  expect(scene.children.length).toBeGreaterThan(10);
+  expect(scene.children.every((child) => (
+    child.selectionId === welding.selectionId
+  ))).toBe(true);
+  const weldingBounds = boundsForEquipment(welding);
+  expect(weldingBounds.min[0]).toBeCloseTo(-10.6);
+  expect(weldingBounds.min[1]).toBeCloseTo(-0.1);
+  expect(weldingBounds.min[2]).toBeCloseTo(-2.9);
+  expect(weldingBounds.max[0]).toBeCloseTo(-5.4);
+  expect(weldingBounds.max[1]).toBeCloseTo(4.25);
+  expect(weldingBounds.max[2]).toBeCloseTo(2.9);
+
+  const arm = visual.parts.get('robot-arm-upper');
+  const spark = visual.parts.get('weld-spark-0');
+  if (!arm || !spark) throw new Error('WELD-201 motion fixtures are missing');
+
+  const motion = createWeldingRobotMotion(visual);
+  motion.update(0.2);
+  expect(arm.toJSON().matrix).toBeDefined();
+  expect(spark.visible).toBe(true);
+  motion.reset();
+  expect(arm.toJSON().matrix).toBeUndefined();
+  expect(spark.visible).toBe(false);
 });

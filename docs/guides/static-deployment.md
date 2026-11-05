@@ -87,7 +87,8 @@ G-5M03M076TL
 Static build 包含：
 
 - HTML、CSS、JavaScript 和 source map。
-- 包含静态页面和本地 Agent；遗留 Runtime `tiled/` Asset tree 仅用于兼容资产管线。
+- 包含静态页面、本地 Agent 和可选的 Runtime `tiled/` Asset tree；`?scene=tileset` 会加载仓库中
+  已准备的污水处理厂 Tileset。
 - 不包含 source GLB、prepared monolithic GLB、客户数据或凭据。
 
 ## URL 参数
@@ -95,11 +96,12 @@ Static build 包含：
 - `?autoplay=0` 关闭开场巡游。
 - `?demo=1` 明确选择 browser-local transport。
 - `?demo=0` 选择 server transport，并要求 service 可达。
+- `?scene=procedural` 使用参数化汽车工厂；`?scene=tileset` 使用已准备的 Tileset 场景。
 
 ## 预期结果
 
 无后端部署路径可以打开并加载参数化汽车制造工厂，并通过 local event stream 执行所有
-内置场景。
+内置场景。Tileset 模式用于资产加载和设备语义验证，汽车制造巡游仅在参数化场景启用。
 
 默认 static build 不包含其它演示 Asset。需要发布其它合规 3D 模型时，必须保留完整的
 Prepared Tileset 和设备清单，并按 [接入其它 3D 模型](other-models.md)调整 custom

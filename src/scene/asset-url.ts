@@ -3,9 +3,10 @@ import { DEMO_ASSET } from '../../shared/demo-asset.js';
 export function resolveDemoAssetUrl(
   baseUri: string,
   relativePath: string,
+  assetRoot: string = DEMO_ASSET.rootPath,
 ): string {
   return new URL(
-    `${DEMO_ASSET.rootPath}/${relativePath}`,
+    `${assetRoot}/${relativePath}`,
     baseUri,
   ).toString();
 }

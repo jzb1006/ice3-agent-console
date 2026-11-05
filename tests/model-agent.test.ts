@@ -59,6 +59,31 @@ test('maps approved model tool calls to the shared event stream', async () => {
   expect(events.at(-1)?.type).toBe(EventType.RUN_FINISHED);
 });
 
+test('uses the Tileset scene domain in the model system prompt', async () => {
+  let messages: readonly { role: string; content: string }[] = [];
+  const agent = createModelAgent({
+    async complete(nextMessages) {
+      messages = nextMessages;
+      return { text: '请先选择一台设备。' };
+    },
+  });
+  const request = {
+    threadId: 'thread-1',
+    runId: 'run-1',
+    state: {},
+    messages: [{ id: 'u1', role: 'user' as const, content: '查看当前设备' }],
+    context: [] as { description: string; value: string }[],
+    tools: [],
+    forwardedProps: {},
+  };
+  request.context = [{ description: 'scene mode', value: 'tileset' }];
+  for await (const _event of agent.run(request)) {
+    // Consume the stream so the model call is executed.
+  }
+  expect(messages[0]?.content).toContain('当前污水处理厂');
+  expect(messages[0]?.content).not.toContain('当前汽车制造工厂');
+});
+
 test('rejects unapproved model tools without emitting them', async () => {
   const agent = createModelAgent({
     complete: async () => ({
