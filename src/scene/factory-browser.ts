@@ -77,6 +77,12 @@ export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLik
       max: [x + 3.05, y + 3.95, z + 3.5],
     };
   }
+  if (item.tag === 'QA-501') {
+    return {
+      min: [x - 2, y - 2.1, z - 3.4],
+      max: [x + 2, y + 2.4, z + 3.4],
+    };
+  }
   const [width, height, depth] = item.size;
   return {
     min: [x - width / 2, y - height / 2, z - depth / 2],
@@ -509,6 +515,73 @@ export function addTrimAssemblyStation(
   return { parts };
 }
 
+export function addQualityInspectionStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+): FactoryStationVisual {
+  const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    const visualPart = mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      {
+        selectionId: item.selectionId,
+        edgeColor,
+      },
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
+  };
+
+  part('inspection-floor', [3.8, 0.24, 6.4], [0, -1.7, 0], '#263d43', '#739692');
+  part('inspection-bed', [2.9, 0.18, 4.9], [0, -0.95, 0], '#728987', '#d9eee4');
+  [-1, -0.5, 0, 0.5, 1].forEach((offsetX, index) => {
+    part(`roller-${index}`, [0.24, 0.18, 4.55], [offsetX, -0.72, 0], '#c7d6cf', '#f2fff7');
+  });
+  part('portal-left', [0.3, 4.1, 5.8], [-1.55, 0, 0], '#514d78', '#c8c5f2');
+  part('portal-right', [0.3, 4.1, 5.8], [1.55, 0, 0], '#514d78', '#c8c5f2');
+  part('portal-top', [3.4, 0.3, 5.8], [0, 2.05, 0], '#60588a', '#d8d5ff');
+  part('camera-rail-near', [2.4, 0.18, 0.18], [0, 1.55, -2.78], '#7b8f9a', '#ddf2e9');
+  part('camera-rail-far', [2.4, 0.18, 0.18], [0, 1.55, 2.78], '#7b8f9a', '#ddf2e9');
+  part('vision-camera-near', [0.52, 0.46, 0.52], [0, 1.25, -2.9], '#273b4d', '#c4e7e1');
+  part('vision-camera-far', [0.52, 0.46, 0.52], [0, 1.25, 2.9], '#273b4d', '#c4e7e1');
+  part('camera-lens-near', [0.18, 0.22, 0.3], [0, 1.22, -3.2], '#78c9c0', '#d7fff2');
+  part('camera-lens-far', [0.18, 0.22, 0.3], [0, 1.22, 3.2], '#78c9c0', '#d7fff2');
+
+  part('scan-light-0', [0.22, 0.16, 5.2], [-0.86, 1.8, 0], '#7ad5c1', '#d7fff2');
+  part('scan-light-1', [0.22, 0.16, 5.2], [0, 1.8, 0], '#7ad5c1', '#d7fff2');
+  part('scan-light-2', [0.22, 0.16, 5.2], [0.86, 1.8, 0], '#7ad5c1', '#d7fff2');
+  part('scan-beam-0', [0.12, 3.1, 0.12], [-0.9, 0.25, -2.45], '#88e2cd', '#e0fff7');
+  part('scan-beam-1', [0.12, 3.1, 0.12], [0.9, 0.25, 2.45], '#88e2cd', '#e0fff7');
+  part('inspection-flash-0', [0.18, 0.18, 0.18], [-1.05, 1.1, -2.72], '#f0c64b', '#fff1a1');
+  part('inspection-flash-1', [0.18, 0.18, 0.18], [1.05, 1.1, 2.72], '#77d2c0', '#d3fff1');
+
+  part('status-pole', [0.12, 0.95, 0.12], [1.65, 1.05, 3.05], '#6d8784', '#c4e6da');
+  part('status-red', [0.26, 0.18, 0.26], [1.65, 1.58, 3.05], '#bf4e4a', '#ffaaa0');
+  part('status-yellow', [0.26, 0.18, 0.26], [1.65, 1.34, 3.05], '#d5a83e', '#ffe99a');
+  part('status-green', [0.26, 0.18, 0.26], [1.65, 1.1, 3.05], '#54b58b', '#b1f5d1');
+  for (const suffix of ['0', '1', '2']) {
+    const light = parts.get(`scan-light-${suffix}`);
+    if (light) light.visible = false;
+  }
+  for (const suffix of ['0', '1']) {
+    const beam = parts.get(`scan-beam-${suffix}`);
+    const flash = parts.get(`inspection-flash-${suffix}`);
+    if (beam) beam.visible = false;
+    if (flash) flash.visible = false;
+  }
+  return { parts };
+}
+
 function addFactoryEquipment(
   scene: ICEScene,
   stationVisuals: Map<string, FactoryStationVisual>,
@@ -551,6 +624,8 @@ function addFactoryEquipment(
       stationVisuals.set(item.tag, addDryingOvenStation(scene, item));
     } else if (item.tag === 'TRIM-401') {
       stationVisuals.set(item.tag, addTrimAssemblyStation(scene, item));
+    } else if (item.tag === 'QA-501') {
+      stationVisuals.set(item.tag, addQualityInspectionStation(scene, item));
     } else {
       scene.addChild(mesh(
         `equipment-${item.tag}`,
@@ -906,6 +981,63 @@ export function createTrimAssemblyMotion(
   };
 }
 
+export function createQualityInspectionMotion(
+  visual: FactoryStationVisual | undefined,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    for (const suffix of ['0', '1', '2']) {
+      const light = parts?.get(`scan-light-${suffix}`);
+      if (light) light.visible = false;
+    }
+    for (const suffix of ['0', '1']) {
+      const beam = parts?.get(`scan-beam-${suffix}`);
+      const flash = parts?.get(`inspection-flash-${suffix}`);
+      if (beam) beam.visible = false;
+      if (flash) flash.visible = false;
+    }
+    const green = parts?.get('status-green');
+    const yellow = parts?.get('status-yellow');
+    if (green) green.visible = true;
+    if (yellow) yellow.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const sweep = Math.sin(progress * Math.PI * 2) * 0.9;
+      for (const suffix of ['0', '1', '2']) {
+        const light = parts.get(`scan-light-${suffix}`);
+        if (!light) continue;
+        const base = light.position;
+        light.setLocalMatrix(translationMatrix(base.x + sweep, base.y, base.z));
+        light.visible = true;
+      }
+      for (const suffix of ['near', 'far']) {
+        const camera = parts.get(`vision-camera-${suffix}`);
+        if (!camera) continue;
+        const base = camera.position;
+        camera.setLocalMatrix(zRotationMatrix(
+          [base.x, base.y, base.z],
+          Math.sin(progress * Math.PI * 2) * (suffix === 'near' ? 0.24 : -0.24),
+        ));
+      }
+      const scanActive = Math.sin(progress * Math.PI * 10) > -0.2;
+      for (const suffix of ['0', '1']) {
+        const beam = parts.get(`scan-beam-${suffix}`);
+        const flash = parts.get(`inspection-flash-${suffix}`);
+        if (beam) beam.visible = scanActive;
+        if (flash) flash.visible = scanActive;
+      }
+      const green = parts.get('status-green');
+      const yellow = parts.get('status-yellow');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+      if (yellow) yellow.visible = !green?.visible;
+    },
+    reset,
+  };
+}
+
 function createProductionVehicle(scene: ICEScene): ProductionVehicle {
   const root = new ICENode({
     id: 'production-run-vehicle',
@@ -1021,6 +1153,7 @@ function createProductionAnimation(
     ['PAINT-301', createPaintBoothMotion(stationVisuals.get('PAINT-301'))],
     ['OVEN-302', createDryingOvenMotion(stationVisuals.get('OVEN-302'))],
     ['TRIM-401', createTrimAssemblyMotion(stationVisuals.get('TRIM-401'))],
+    ['QA-501', createQualityInspectionMotion(stationVisuals.get('QA-501'))],
   ]);
   let active: AbortController | null = null;
   let disposed = false;
@@ -1120,6 +1253,7 @@ function createStationPreviewAnimation(
     ['PAINT-301', createPaintBoothMotion(stationVisuals.get('PAINT-301'))],
     ['OVEN-302', createDryingOvenMotion(stationVisuals.get('OVEN-302'))],
     ['TRIM-401', createTrimAssemblyMotion(stationVisuals.get('TRIM-401'))],
+    ['QA-501', createQualityInspectionMotion(stationVisuals.get('QA-501'))],
   ]);
   const durationByTag: ReadonlyMap<string, number> = new Map([
     ['BODY-101', 1_400],
@@ -1128,6 +1262,7 @@ function createStationPreviewAnimation(
     ['PAINT-301', 1_800],
     ['OVEN-302', 1_800],
     ['TRIM-401', 1_900],
+    ['QA-501', 2_000],
   ]);
   let active: {
     readonly controller: AbortController;
@@ -1399,6 +1534,7 @@ export async function createFactorySceneController(
       || selectedTag === 'PAINT-301'
       || selectedTag === 'OVEN-302'
       || selectedTag === 'TRIM-401'
+      || selectedTag === 'QA-501'
     ) {
       stationPreviewAnimation.play(selectedTag);
     } else {

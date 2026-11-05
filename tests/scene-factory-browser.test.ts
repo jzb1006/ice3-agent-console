@@ -7,6 +7,7 @@ import {
   addDryingOvenStation,
   addMainConveyorStation,
   addPaintBoothStation,
+  addQualityInspectionStation,
   addTrimAssemblyStation,
   addWeldingRobotStation,
   boundsForEquipment,
@@ -14,6 +15,7 @@ import {
   createConveyorStationMotion,
   createDryingOvenMotion,
   createPaintBoothMotion,
+  createQualityInspectionMotion,
   createTrimAssemblyMotion,
   createWeldingRobotMotion,
 } from '../src/scene/factory-browser.ts';
@@ -208,4 +210,40 @@ test('TRIM-401 assembly station preserves selection identity and animates instal
   expect(lift.toJSON().matrix).toBeUndefined();
   expect(arm.toJSON().matrix).toBeUndefined();
   expect(spark.visible).toBe(false);
+});
+
+test('QA-501 inspection gate preserves selection identity and animates scanning', () => {
+  const scene = new ICEScene({ id: 'test-scene' });
+  const quality = FACTORY_EQUIPMENT.find((item) => item.tag === 'QA-501');
+  if (!quality) throw new Error('QA-501 fixture is missing');
+
+  const visual = addQualityInspectionStation(scene, quality);
+  expect(scene.children.length).toBeGreaterThan(20);
+  expect(scene.children.every((child) => (
+    child.selectionId === quality.selectionId
+  ))).toBe(true);
+  const qualityBounds = boundsForEquipment(quality);
+  expect(qualityBounds.min[0]).toBeCloseTo(22.5);
+  expect(qualityBounds.min[1]).toBeCloseTo(-0.2);
+  expect(qualityBounds.min[2]).toBeCloseTo(-3.4);
+  expect(qualityBounds.max[0]).toBeCloseTo(26.5);
+  expect(qualityBounds.max[1]).toBeCloseTo(4.3);
+  expect(qualityBounds.max[2]).toBeCloseTo(3.4);
+
+  const light = visual.parts.get('scan-light-0');
+  const camera = visual.parts.get('vision-camera-near');
+  const beam = visual.parts.get('scan-beam-0');
+  if (!light || !camera || !beam) throw new Error('QA-501 motion fixtures are missing');
+
+  const motion = createQualityInspectionMotion(visual);
+  motion.update(0.2);
+  expect(light.toJSON().matrix).toBeDefined();
+  expect(camera.toJSON().matrix).toBeDefined();
+  expect(light.visible).toBe(true);
+  expect(beam.visible).toBe(true);
+  motion.reset();
+  expect(light.toJSON().matrix).toBeUndefined();
+  expect(camera.toJSON().matrix).toBeUndefined();
+  expect(light.visible).toBe(false);
+  expect(beam.visible).toBe(false);
 });
