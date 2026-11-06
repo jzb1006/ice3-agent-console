@@ -7,6 +7,7 @@ import {
   addDryingOvenStation,
   addEndOfLineTestStation,
   addFinishedVehicleDockStation,
+  addGlassDoorInstallStation,
   addMainConveyorStation,
   addPaintBoothStation,
   addPowertrainInstallStation,
@@ -19,6 +20,7 @@ import {
   createDryingOvenMotion,
   createEndOfLineTestMotion,
   createFinishedVehicleDockMotion,
+  createGlassDoorInstallMotion,
   createPaintBoothMotion,
   createPowertrainInstallMotion,
   createQualityInspectionMotion,
@@ -353,5 +355,39 @@ test('POWER-402 powertrain station preserves selection identity and animates ins
   motion.reset();
   expect(lift.toJSON().matrix).toBeUndefined();
   expect(roller.toJSON().matrix).toBeUndefined();
+  expect(flash.visible).toBe(false);
+});
+
+test('GLASS-403 glass and door station preserves selection identity and animates installation', () => {
+  const scene = new ICEScene({ id: 'test-scene' });
+  const glass = FACTORY_EQUIPMENT.find((item) => item.tag === 'GLASS-403');
+  if (!glass) throw new Error('GLASS-403 fixture is missing');
+
+  const visual = addGlassDoorInstallStation(scene, glass);
+  expect(scene.children.length).toBeGreaterThan(20);
+  expect(scene.children.every((child) => (
+    child.selectionId === glass.selectionId
+  ))).toBe(true);
+  const glassBounds = boundsForEquipment(glass);
+  expect(glassBounds.min[0]).toBeCloseTo(16.6);
+  expect(glassBounds.min[1]).toBeCloseTo(-0.4);
+  expect(glassBounds.min[2]).toBeCloseTo(0);
+  expect(glassBounds.max[0]).toBeCloseTo(21.5);
+  expect(glassBounds.max[1]).toBeCloseTo(4.65);
+  expect(glassBounds.max[2]).toBeCloseTo(5.6);
+
+  const arm = visual.parts.get('suction-arm-near');
+  const cup = visual.parts.get('suction-cup-near');
+  const flash = visual.parts.get('install-flash-near');
+  if (!arm || !cup || !flash) throw new Error('GLASS-403 motion fixtures are missing');
+
+  const motion = createGlassDoorInstallMotion(visual);
+  motion.update(0.2);
+  expect(arm.toJSON().matrix).toBeDefined();
+  expect(cup.toJSON().matrix).toBeDefined();
+  expect(flash.visible).toBe(true);
+  motion.reset();
+  expect(arm.toJSON().matrix).toBeUndefined();
+  expect(cup.toJSON().matrix).toBeUndefined();
   expect(flash.visible).toBe(false);
 });

@@ -101,6 +101,12 @@ export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLik
       max: [x + 2.3, y + 3.5, z + 2.1],
     };
   }
+  if (item.tag === 'GLASS-403') {
+    return {
+      min: [x - 2.4, y - 1.55, z - 2.8],
+      max: [x + 2.5, y + 3.5, z + 2.8],
+    };
+  }
   const [width, height, depth] = item.size;
   return {
     min: [x - width / 2, y - height / 2, z - depth / 2],
@@ -784,6 +790,60 @@ export function addPowertrainInstallStation(
   return { parts };
 }
 
+export function addGlassDoorInstallStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+): FactoryStationVisual {
+  const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    const visualPart = mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      { selectionId: item.selectionId, edgeColor },
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
+  };
+
+  part('glass-floor', [4.6, 0.24, 5], [0, -1.2, 0], '#263d43', '#739692');
+  part('glass-platform', [3.8, 0.18, 3.8], [0, -0.46, 0], '#718886', '#d9eee4');
+  part('vehicle-cabin', [2.2, 0.85, 1.8], [0, 0.02, 0], '#456f78', '#a9e2d3');
+  part('windshield', [0.18, 0.7, 1.55], [-1.1, 0.5, 0], '#79b5b8', '#d4fff3');
+  part('rear-glass', [0.18, 0.58, 1.42], [1.05, 0.42, 0], '#6da3a9', '#c5f5eb');
+  part('door-frame-near', [1.65, 1.25, 0.16], [0.2, 0.28, -1.05], '#58777b', '#c6e6dc');
+  part('door-frame-far', [1.65, 1.25, 0.16], [0.2, 0.28, 1.05], '#58777b', '#c6e6dc');
+  part('door-panel-near', [1.2, 0.85, 0.12], [0.35, 0.05, -1.18], '#688b8d', '#d2efe6');
+  part('door-panel-far', [1.2, 0.85, 0.12], [0.35, 0.05, 1.18], '#688b8d', '#d2efe6');
+  part('gantry-post-left', [0.24, 2.7, 0.24], [-1.85, 0.65, -2.15], '#647e81', '#d1ece3');
+  part('gantry-post-right', [0.24, 2.7, 0.24], [1.85, 0.65, -2.15], '#647e81', '#d1ece3');
+  part('gantry-rail', [3.9, 0.22, 0.22], [0, 2.12, -2.15], '#7e9691', '#e0f2e9');
+  part('gantry-beam', [0.22, 0.2, 2.5], [0, 2.45, -2.15], '#d0a744', '#ffeb9c');
+  part('suction-arm-near', [0.2, 1.15, 0.2], [-0.55, 1.55, -2.15], '#c48149', '#ffdbb3');
+  part('suction-arm-far', [0.2, 1.15, 0.2], [0.55, 1.55, -2.15], '#c48149', '#ffdbb3');
+  part('suction-cup-near', [0.34, 0.24, 0.34], [-0.55, 0.92, -2.15], '#78a39b', '#d6fff1');
+  part('suction-cup-far', [0.34, 0.24, 0.34], [0.55, 0.92, -2.15], '#78a39b', '#d6fff1');
+  part('install-flash-near', [0.16, 0.16, 0.16], [-0.55, 0.62, -2.15], '#f0c64b', '#fff1a1');
+  part('install-flash-far', [0.16, 0.16, 0.16], [0.55, 0.62, -2.15], '#77d2c0', '#d3fff1');
+  part('status-pole', [0.12, 0.95, 0.12], [2.1, 1.05, 2.55], '#6d8784', '#c4e6da');
+  part('status-red', [0.26, 0.18, 0.26], [2.1, 1.58, 2.55], '#bf4e4a', '#ffaaa0');
+  part('status-yellow', [0.26, 0.18, 0.26], [2.1, 1.34, 2.55], '#d5a83e', '#ffe99a');
+  part('status-green', [0.26, 0.18, 0.26], [2.1, 1.1, 2.55], '#54b58b', '#b1f5d1');
+  for (const suffix of ['near', 'far']) {
+    const flash = parts.get(`install-flash-${suffix}`);
+    if (flash) flash.visible = false;
+  }
+  return { parts };
+}
+
 function addFactoryEquipment(
   scene: ICEScene,
   stationVisuals: Map<string, FactoryStationVisual>,
@@ -834,6 +894,8 @@ function addFactoryEquipment(
       stationVisuals.set(item.tag, addFinishedVehicleDockStation(scene, item));
     } else if (item.tag === 'POWER-402') {
       stationVisuals.set(item.tag, addPowertrainInstallStation(scene, item));
+    } else if (item.tag === 'GLASS-403') {
+      stationVisuals.set(item.tag, addGlassDoorInstallStation(scene, item));
     } else {
       scene.addChild(mesh(
         `equipment-${item.tag}`,
@@ -1444,6 +1506,60 @@ export function createPowertrainInstallMotion(
   };
 }
 
+export function createGlassDoorInstallMotion(
+  visual: FactoryStationVisual | undefined,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    for (const suffix of ['near', 'far']) {
+      const flash = parts?.get(`install-flash-${suffix}`);
+      if (flash) flash.visible = false;
+    }
+    const green = parts?.get('status-green');
+    const yellow = parts?.get('status-yellow');
+    if (green) green.visible = true;
+    if (yellow) yellow.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const armSwing = 0.28 * Math.sin(progress * Math.PI * 2);
+      for (const [suffix, multiplier] of [['near', 1], ['far', -1]] as const) {
+        const arm = parts.get(`suction-arm-${suffix}`);
+        if (arm) {
+          const base = arm.position;
+          arm.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], armSwing * multiplier));
+        }
+        const cup = parts.get(`suction-cup-${suffix}`);
+        if (cup) {
+          const base = cup.position;
+          cup.setLocalMatrix(translationMatrix(
+            base.x,
+            base.y + 0.12 * Math.sin(progress * Math.PI * 2 + (multiplier < 0 ? Math.PI : 0)),
+            base.z,
+          ));
+        }
+      }
+      const vehicle = parts.get('vehicle-cabin');
+      if (vehicle) {
+        const base = vehicle.position;
+        vehicle.setLocalMatrix(translationMatrix(base.x + 0.08 * Math.sin(progress * Math.PI * 2), base.y, base.z));
+      }
+      const active = Math.sin(progress * Math.PI * 12) > -0.15;
+      for (const suffix of ['near', 'far']) {
+        const flash = parts.get(`install-flash-${suffix}`);
+        if (flash) flash.visible = active;
+      }
+      const green = parts.get('status-green');
+      const yellow = parts.get('status-yellow');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+      if (yellow) yellow.visible = !green?.visible;
+    },
+    reset,
+  };
+}
+
 function createProductionVehicle(scene: ICEScene): ProductionVehicle {
   const root = new ICENode({
     id: 'production-run-vehicle',
@@ -1550,7 +1666,8 @@ function createProductionAnimation(
     { tag: 'OVEN-302', startX: 2, endX: 8, durationMs: 950, holdMs: 900, visual: 'paint' },
     { tag: 'TRIM-401', startX: 8, endX: 17, durationMs: 1_100, holdMs: 1_100, visual: 'assembly' },
     { tag: 'POWER-402', startX: 17, endX: 18, durationMs: 950, holdMs: 900, visual: 'assembly' },
-    { tag: 'QA-501', startX: 18, endX: 29, durationMs: 1_100, holdMs: 1_100, visual: 'complete' },
+    { tag: 'GLASS-403', startX: 18, endX: 22, durationMs: 1_000, holdMs: 950, visual: 'assembly' },
+    { tag: 'QA-501', startX: 22, endX: 29, durationMs: 1_100, holdMs: 1_100, visual: 'complete' },
     { tag: 'EOL-601', startX: 29, endX: 34, durationMs: 1_000, holdMs: 1_000, visual: 'complete' },
     { tag: 'LOGI-701', startX: 34, endX: 38, durationMs: 1_000, holdMs: 1_250, visual: 'complete' },
   ];
@@ -1565,6 +1682,7 @@ function createProductionAnimation(
     ['EOL-601', createEndOfLineTestMotion(stationVisuals.get('EOL-601'))],
     ['LOGI-701', createFinishedVehicleDockMotion(stationVisuals.get('LOGI-701'))],
     ['POWER-402', createPowertrainInstallMotion(stationVisuals.get('POWER-402'))],
+    ['GLASS-403', createGlassDoorInstallMotion(stationVisuals.get('GLASS-403'))],
   ]);
   let active: AbortController | null = null;
   let disposed = false;
@@ -1668,6 +1786,7 @@ function createStationPreviewAnimation(
     ['EOL-601', createEndOfLineTestMotion(stationVisuals.get('EOL-601'))],
     ['LOGI-701', createFinishedVehicleDockMotion(stationVisuals.get('LOGI-701'))],
     ['POWER-402', createPowertrainInstallMotion(stationVisuals.get('POWER-402'))],
+    ['GLASS-403', createGlassDoorInstallMotion(stationVisuals.get('GLASS-403'))],
   ]);
   const durationByTag: ReadonlyMap<string, number> = new Map([
     ['BODY-101', 1_400],
@@ -1680,6 +1799,7 @@ function createStationPreviewAnimation(
     ['EOL-601', 1_900],
     ['LOGI-701', 1_900],
     ['POWER-402', 1_900],
+    ['GLASS-403', 1_900],
   ]);
   let active: {
     readonly controller: AbortController;
@@ -1955,6 +2075,7 @@ export async function createFactorySceneController(
       || selectedTag === 'EOL-601'
       || selectedTag === 'LOGI-701'
       || selectedTag === 'POWER-402'
+      || selectedTag === 'GLASS-403'
     ) {
       stationPreviewAnimation.play(selectedTag);
     } else {
