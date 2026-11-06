@@ -5,6 +5,7 @@ import { FACTORY_EQUIPMENT } from '../shared/factory.ts';
 import {
   addBodyLoadingStation,
   addDryingOvenStation,
+  addEndOfLineTestStation,
   addMainConveyorStation,
   addPaintBoothStation,
   addQualityInspectionStation,
@@ -14,6 +15,7 @@ import {
   createBodyStationMotion,
   createConveyorStationMotion,
   createDryingOvenMotion,
+  createEndOfLineTestMotion,
   createPaintBoothMotion,
   createQualityInspectionMotion,
   createTrimAssemblyMotion,
@@ -247,3 +249,38 @@ test('QA-501 inspection gate preserves selection identity and animates scanning'
   expect(light.visible).toBe(false);
   expect(beam.visible).toBe(false);
 });
+
+test('EOL-601 end-of-line test station preserves selection identity and animates checks', () => {
+  const scene = new ICEScene({ id: 'test-scene' });
+  const eol = FACTORY_EQUIPMENT.find((item) => item.tag === 'EOL-601');
+  if (!eol) throw new Error('EOL-601 fixture is missing');
+
+  const visual = addEndOfLineTestStation(scene, eol);
+  expect(scene.children.length).toBeGreaterThan(20);
+  expect(scene.children.every((child) => (
+    child.selectionId === eol.selectionId
+  ))).toBe(true);
+  const eolBounds = boundsForEquipment(eol);
+  expect(eolBounds.min[0]).toBeCloseTo(27.4);
+  expect(eolBounds.min[1]).toBeCloseTo(-0.55);
+  expect(eolBounds.min[2]).toBeCloseTo(-2.9);
+  expect(eolBounds.max[0]).toBeCloseTo(32.6);
+  expect(eolBounds.max[1]).toBeCloseTo(4.15);
+  expect(eolBounds.max[2]).toBeCloseTo(2.9);
+
+  const roller = visual.parts.get('roller-0');
+  const arm = visual.parts.get('test-arm-left');
+  const flash = visual.parts.get('test-flash-0');
+  if (!roller || !arm || !flash) throw new Error('EOL-601 motion fixtures are missing');
+
+  const motion = createEndOfLineTestMotion(visual);
+  motion.update(0.2);
+  expect(roller.toJSON().matrix).toBeDefined();
+  expect(arm.toJSON().matrix).toBeDefined();
+  expect(flash.visible).toBe(true);
+  motion.reset();
+  expect(roller.toJSON().matrix).toBeUndefined();
+  expect(arm.toJSON().matrix).toBeUndefined();
+  expect(flash.visible).toBe(false);
+});
+

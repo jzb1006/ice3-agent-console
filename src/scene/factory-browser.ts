@@ -83,6 +83,12 @@ export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLik
       max: [x + 2, y + 2.4, z + 3.4],
     };
   }
+  if (item.tag === 'EOL-601') {
+    return {
+      min: [x - 2.6, y - 1.5, z - 2.9],
+      max: [x + 2.6, y + 3.2, z + 2.9],
+    };
+  }
   const [width, height, depth] = item.size;
   return {
     min: [x - width / 2, y - height / 2, z - depth / 2],
@@ -582,6 +588,70 @@ export function addQualityInspectionStation(
   return { parts };
 }
 
+export function addEndOfLineTestStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+): FactoryStationVisual {
+  const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    const visualPart = mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      {
+        selectionId: item.selectionId,
+        edgeColor,
+      },
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
+  };
+
+  part('test-floor', [4.8, 0.24, 5.4], [0, -1.15, 0], '#263d43', '#739692');
+  part('test-platform', [3.7, 0.18, 4], [0, -0.42, 0], '#718886', '#d9eee4');
+  [-1.2, -0.6, 0, 0.6, 1.2].forEach((offsetX, index) => {
+    part(`roller-${index}`, [0.24, 0.18, 3.8], [offsetX, -0.16, 0], '#c7d6cf', '#f2fff7');
+  });
+  part('gantry-post-left', [0.28, 2.6, 0.28], [-1.9, 0.6, -2.15], '#806e52', '#ead7ae');
+  part('gantry-post-right', [0.28, 2.6, 0.28], [1.9, 0.6, -2.15], '#806e52', '#ead7ae');
+  part('gantry-beam', [4.2, 0.24, 0.28], [0, 1.95, -2.15], '#9c8358', '#f4dfb8');
+  part('dyno-left', [0.7, 0.3, 1.1], [-1.05, 0.05, -0.85], '#526e79', '#c6e9df');
+  part('dyno-right', [0.7, 0.3, 1.1], [1.05, 0.05, 0.85], '#526e79', '#c6e9df');
+  part('test-arm-left', [0.22, 1.35, 0.22], [-1.2, 1.08, -1.55], '#c16d45', '#ffd3ad');
+  part('test-arm-right', [0.22, 1.35, 0.22], [1.2, 1.08, 1.55], '#c16d45', '#ffd3ad');
+  part('test-probe-left', [0.32, 0.32, 0.32], [-1.2, 0.38, -1.55], '#74a29b', '#d6fff1');
+  part('test-probe-right', [0.32, 0.32, 0.32], [1.2, 0.38, 1.55], '#74a29b', '#d6fff1');
+  part('diagnostic-console', [0.82, 1, 0.62], [2.05, 0.05, -1.82], '#4c6670', '#c5e6dd');
+  part('console-screen', [0.52, 0.4, 0.12], [2.05, 0.76, -1.82], '#6dc3bb', '#d7fff2');
+  part('test-light-0', [0.24, 0.14, 0.24], [-1.2, 2.03, -2.15], '#7ad5c1', '#d7fff2');
+  part('test-light-1', [0.24, 0.14, 0.24], [0, 2.03, -2.15], '#7ad5c1', '#d7fff2');
+  part('test-light-2', [0.24, 0.14, 0.24], [1.2, 2.03, -2.15], '#7ad5c1', '#d7fff2');
+  part('test-flash-0', [0.18, 0.18, 0.18], [-1.75, 1.1, -2.15], '#f0c64b', '#fff1a1');
+  part('test-flash-1', [0.18, 0.18, 0.18], [1.75, 1.1, -2.15], '#77d2c0', '#d3fff1');
+
+  part('status-pole', [0.12, 0.95, 0.12], [2.2, 1.05, 2.55], '#6d8784', '#c4e6da');
+  part('status-red', [0.26, 0.18, 0.26], [2.2, 1.58, 2.55], '#bf4e4a', '#ffaaa0');
+  part('status-yellow', [0.26, 0.18, 0.26], [2.2, 1.34, 2.55], '#d5a83e', '#ffe99a');
+  part('status-green', [0.26, 0.18, 0.26], [2.2, 1.1, 2.55], '#54b58b', '#b1f5d1');
+  for (const suffix of ['0', '1', '2']) {
+    const light = parts.get(`test-light-${suffix}`);
+    if (light) light.visible = false;
+  }
+  for (const suffix of ['0', '1']) {
+    const flash = parts.get(`test-flash-${suffix}`);
+    if (flash) flash.visible = false;
+  }
+  return { parts };
+}
+
 function addFactoryEquipment(
   scene: ICEScene,
   stationVisuals: Map<string, FactoryStationVisual>,
@@ -626,6 +696,8 @@ function addFactoryEquipment(
       stationVisuals.set(item.tag, addTrimAssemblyStation(scene, item));
     } else if (item.tag === 'QA-501') {
       stationVisuals.set(item.tag, addQualityInspectionStation(scene, item));
+    } else if (item.tag === 'EOL-601') {
+      stationVisuals.set(item.tag, addEndOfLineTestStation(scene, item));
     } else {
       scene.addChild(mesh(
         `equipment-${item.tag}`,
@@ -1038,6 +1110,74 @@ export function createQualityInspectionMotion(
   };
 }
 
+export function createEndOfLineTestMotion(
+  visual: FactoryStationVisual | undefined,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    for (const suffix of ['0', '1', '2']) {
+      const light = parts?.get(`test-light-${suffix}`);
+      if (light) light.visible = false;
+    }
+    for (const suffix of ['0', '1']) {
+      const flash = parts?.get(`test-flash-${suffix}`);
+      if (flash) flash.visible = false;
+    }
+    const green = parts?.get('status-green');
+    const yellow = parts?.get('status-yellow');
+    if (green) green.visible = true;
+    if (yellow) yellow.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const rollerAngle = progress * Math.PI * 10;
+      for (let index = 0; index < 5; index += 1) {
+        const roller = parts.get(`roller-${index}`);
+        if (!roller) continue;
+        const base = roller.position;
+        roller.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], rollerAngle));
+      }
+      const dynoAngle = -progress * Math.PI * 8;
+      for (const suffix of ['left', 'right']) {
+        const dyno = parts.get(`dyno-${suffix}`);
+        if (!dyno) continue;
+        const base = dyno.position;
+        dyno.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], dynoAngle));
+      }
+      const swing = 0.34 * Math.sin(progress * Math.PI * 2);
+      for (const [suffix, multiplier] of [['left', 1], ['right', -1]] as const) {
+        const arm = parts.get(`test-arm-${suffix}`);
+        if (!arm) continue;
+        const base = arm.position;
+        arm.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], swing * multiplier));
+      }
+      const probeLift = 0.12 * Math.sin(progress * Math.PI * 2);
+      for (const suffix of ['left', 'right']) {
+        const probe = parts.get(`test-probe-${suffix}`);
+        if (!probe) continue;
+        const base = probe.position;
+        probe.setLocalMatrix(translationMatrix(base.x, base.y + probeLift, base.z));
+      }
+      const testActive = Math.sin(progress * Math.PI * 12) > -0.15;
+      for (const suffix of ['0', '1', '2']) {
+        const light = parts.get(`test-light-${suffix}`);
+        if (light) light.visible = true;
+      }
+      for (const suffix of ['0', '1']) {
+        const flash = parts.get(`test-flash-${suffix}`);
+        if (flash) flash.visible = testActive;
+      }
+      const green = parts.get('status-green');
+      const yellow = parts.get('status-yellow');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+      if (yellow) yellow.visible = !green?.visible;
+    },
+    reset,
+  };
+}
+
 function createProductionVehicle(scene: ICEScene): ProductionVehicle {
   const root = new ICENode({
     id: 'production-run-vehicle',
@@ -1144,7 +1284,8 @@ function createProductionAnimation(
     { tag: 'OVEN-302', startX: 2, endX: 8, durationMs: 950, holdMs: 900, visual: 'paint' },
     { tag: 'TRIM-401', startX: 8, endX: 17, durationMs: 1_100, holdMs: 1_100, visual: 'assembly' },
     { tag: 'QA-501', startX: 17, endX: 29, durationMs: 1_100, holdMs: 1_100, visual: 'complete' },
-    { tag: 'LOGI-701', startX: 29, endX: 38, durationMs: 1_000, holdMs: 1_250, visual: 'complete' },
+    { tag: 'EOL-601', startX: 29, endX: 34, durationMs: 1_000, holdMs: 1_000, visual: 'complete' },
+    { tag: 'LOGI-701', startX: 34, endX: 38, durationMs: 1_000, holdMs: 1_250, visual: 'complete' },
   ];
   const stationMotions = new Map<string, FactoryStationMotion>([
     ['BODY-101', createBodyStationMotion(stationVisuals.get('BODY-101'))],
@@ -1154,6 +1295,7 @@ function createProductionAnimation(
     ['OVEN-302', createDryingOvenMotion(stationVisuals.get('OVEN-302'))],
     ['TRIM-401', createTrimAssemblyMotion(stationVisuals.get('TRIM-401'))],
     ['QA-501', createQualityInspectionMotion(stationVisuals.get('QA-501'))],
+    ['EOL-601', createEndOfLineTestMotion(stationVisuals.get('EOL-601'))],
   ]);
   let active: AbortController | null = null;
   let disposed = false;
@@ -1254,6 +1396,7 @@ function createStationPreviewAnimation(
     ['OVEN-302', createDryingOvenMotion(stationVisuals.get('OVEN-302'))],
     ['TRIM-401', createTrimAssemblyMotion(stationVisuals.get('TRIM-401'))],
     ['QA-501', createQualityInspectionMotion(stationVisuals.get('QA-501'))],
+    ['EOL-601', createEndOfLineTestMotion(stationVisuals.get('EOL-601'))],
   ]);
   const durationByTag: ReadonlyMap<string, number> = new Map([
     ['BODY-101', 1_400],
@@ -1263,6 +1406,7 @@ function createStationPreviewAnimation(
     ['OVEN-302', 1_800],
     ['TRIM-401', 1_900],
     ['QA-501', 2_000],
+    ['EOL-601', 1_900],
   ]);
   let active: {
     readonly controller: AbortController;
@@ -1535,6 +1679,7 @@ export async function createFactorySceneController(
       || selectedTag === 'OVEN-302'
       || selectedTag === 'TRIM-401'
       || selectedTag === 'QA-501'
+      || selectedTag === 'EOL-601'
     ) {
       stationPreviewAnimation.play(selectedTag);
     } else {
