@@ -89,6 +89,12 @@ export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLik
       max: [x + 2.6, y + 3.2, z + 2.9],
     };
   }
+  if (item.tag === 'LOGI-701') {
+    return {
+      min: [x - 3.4, y - 1.55, z - 3.2],
+      max: [x + 3.7, y + 3.6, z + 3.2],
+    };
+  }
   const [width, height, depth] = item.size;
   return {
     min: [x - width / 2, y - height / 2, z - depth / 2],
@@ -652,6 +658,66 @@ export function addEndOfLineTestStation(
   return { parts };
 }
 
+export function addFinishedVehicleDockStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+): FactoryStationVisual {
+  const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    const visualPart = mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      {
+        selectionId: item.selectionId,
+        edgeColor,
+      },
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
+  };
+
+  part('dock-floor', [5.2, 0.24, 6], [0, -1.25, 0], '#263d43', '#739692');
+  part('dock-platform', [4.6, 0.18, 4.5], [0, -0.58, 0], '#718886', '#d9eee4');
+  part('outbound-ramp', [2.6, 0.18, 4.8], [2.25, -0.45, 0], '#536b70', '#c6e6dc');
+  [-1.4, -0.7, 0, 0.7, 1.4].forEach((offsetX, index) => {
+    part(`roller-${index}`, [0.26, 0.18, 4.15], [offsetX, -0.28, 0], '#c7d6cf', '#f2fff7');
+  });
+  part('dock-post-left', [0.3, 3.1, 0.3], [-2.15, 0.5, -2.55], '#526d72', '#c9e7dd');
+  part('dock-post-right', [0.3, 3.1, 0.3], [-2.15, 0.5, 2.55], '#526d72', '#c9e7dd');
+  part('dock-roof', [4.8, 0.24, 5.7], [-0.2, 2.25, 0], '#35565e', '#a8d4c8');
+  part('dock-beam', [4.3, 0.22, 0.24], [-0.2, 1.95, -2.55], '#6b8586', '#d8efe5');
+  part('loading-arm', [0.28, 1.4, 0.28], [-0.7, 1.1, -2.55], '#c48149', '#ffdbb3');
+  part('loading-hook', [0.36, 0.32, 0.36], [-0.7, 0.35, -2.55], '#d2a242', '#ffeb9b');
+  part('dock-barrier', [0.16, 0.95, 3.9], [1.65, 0.22, 0], '#d0a744', '#ffeb9c');
+  part('dispatch-light-0', [0.28, 0.14, 0.28], [-1.35, 2.08, -2.55], '#7ad5c1', '#d7fff2');
+  part('dispatch-light-1', [0.28, 0.14, 0.28], [-0.2, 2.08, -2.55], '#7ad5c1', '#d7fff2');
+  part('dispatch-light-2', [0.28, 0.14, 0.28], [0.95, 2.08, -2.55], '#7ad5c1', '#d7fff2');
+  part('dispatch-flash-0', [0.2, 0.2, 0.2], [1.85, 1.3, -2.55], '#f0c64b', '#fff1a1');
+  part('dispatch-flash-1', [0.2, 0.2, 0.2], [1.85, 1.3, 2.55], '#77d2c0', '#d3fff1');
+  part('status-pole', [0.12, 0.95, 0.12], [2.1, 1.05, 3], '#6d8784', '#c4e6da');
+  part('status-red', [0.26, 0.18, 0.26], [2.1, 1.58, 3], '#bf4e4a', '#ffaaa0');
+  part('status-yellow', [0.26, 0.18, 0.26], [2.1, 1.34, 3], '#d5a83e', '#ffe99a');
+  part('status-green', [0.26, 0.18, 0.26], [2.1, 1.1, 3], '#54b58b', '#b1f5d1');
+  for (const suffix of ['0', '1', '2']) {
+    const light = parts.get(`dispatch-light-${suffix}`);
+    if (light) light.visible = false;
+  }
+  for (const suffix of ['0', '1']) {
+    const flash = parts.get(`dispatch-flash-${suffix}`);
+    if (flash) flash.visible = false;
+  }
+  return { parts };
+}
+
 function addFactoryEquipment(
   scene: ICEScene,
   stationVisuals: Map<string, FactoryStationVisual>,
@@ -698,6 +764,8 @@ function addFactoryEquipment(
       stationVisuals.set(item.tag, addQualityInspectionStation(scene, item));
     } else if (item.tag === 'EOL-601') {
       stationVisuals.set(item.tag, addEndOfLineTestStation(scene, item));
+    } else if (item.tag === 'LOGI-701') {
+      stationVisuals.set(item.tag, addFinishedVehicleDockStation(scene, item));
     } else {
       scene.addChild(mesh(
         `equipment-${item.tag}`,
@@ -1178,6 +1246,76 @@ export function createEndOfLineTestMotion(
   };
 }
 
+export function createFinishedVehicleDockMotion(
+  visual: FactoryStationVisual | undefined,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    for (const suffix of ['0', '1', '2']) {
+      const light = parts?.get(`dispatch-light-${suffix}`);
+      if (light) light.visible = false;
+    }
+    for (const suffix of ['0', '1']) {
+      const flash = parts?.get(`dispatch-flash-${suffix}`);
+      if (flash) flash.visible = false;
+    }
+    const green = parts?.get('status-green');
+    const yellow = parts?.get('status-yellow');
+    if (green) green.visible = true;
+    if (yellow) yellow.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const rollerAngle = progress * Math.PI * 10;
+      for (let index = 0; index < 5; index += 1) {
+        const roller = parts.get(`roller-${index}`);
+        if (!roller) continue;
+        const base = roller.position;
+        roller.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], rollerAngle));
+      }
+      const arm = parts.get('loading-arm');
+      if (arm) {
+        const base = arm.position;
+        arm.setLocalMatrix(zRotationMatrix(
+          [base.x, base.y, base.z],
+          Math.sin(progress * Math.PI * 2) * 0.35,
+        ));
+      }
+      const hook = parts.get('loading-hook');
+      if (hook) {
+        const base = hook.position;
+        hook.setLocalMatrix(translationMatrix(
+          base.x,
+          base.y + Math.sin(progress * Math.PI * 2) * 0.18,
+          base.z,
+        ));
+      }
+      const barrier = parts.get('dock-barrier');
+      if (barrier) {
+        const base = barrier.position;
+        const lift = Math.max(0, Math.sin(progress * Math.PI * 2)) * 0.72;
+        barrier.setLocalMatrix(translationMatrix(base.x, base.y + lift, base.z));
+      }
+      const dispatchActive = Math.sin(progress * Math.PI * 12) > -0.15;
+      for (const suffix of ['0', '1', '2']) {
+        const light = parts.get(`dispatch-light-${suffix}`);
+        if (light) light.visible = true;
+      }
+      for (const suffix of ['0', '1']) {
+        const flash = parts.get(`dispatch-flash-${suffix}`);
+        if (flash) flash.visible = dispatchActive;
+      }
+      const green = parts.get('status-green');
+      const yellow = parts.get('status-yellow');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+      if (yellow) yellow.visible = !green?.visible;
+    },
+    reset,
+  };
+}
+
 function createProductionVehicle(scene: ICEScene): ProductionVehicle {
   const root = new ICENode({
     id: 'production-run-vehicle',
@@ -1296,6 +1434,7 @@ function createProductionAnimation(
     ['TRIM-401', createTrimAssemblyMotion(stationVisuals.get('TRIM-401'))],
     ['QA-501', createQualityInspectionMotion(stationVisuals.get('QA-501'))],
     ['EOL-601', createEndOfLineTestMotion(stationVisuals.get('EOL-601'))],
+    ['LOGI-701', createFinishedVehicleDockMotion(stationVisuals.get('LOGI-701'))],
   ]);
   let active: AbortController | null = null;
   let disposed = false;
@@ -1397,6 +1536,7 @@ function createStationPreviewAnimation(
     ['TRIM-401', createTrimAssemblyMotion(stationVisuals.get('TRIM-401'))],
     ['QA-501', createQualityInspectionMotion(stationVisuals.get('QA-501'))],
     ['EOL-601', createEndOfLineTestMotion(stationVisuals.get('EOL-601'))],
+    ['LOGI-701', createFinishedVehicleDockMotion(stationVisuals.get('LOGI-701'))],
   ]);
   const durationByTag: ReadonlyMap<string, number> = new Map([
     ['BODY-101', 1_400],
@@ -1407,6 +1547,7 @@ function createStationPreviewAnimation(
     ['TRIM-401', 1_900],
     ['QA-501', 2_000],
     ['EOL-601', 1_900],
+    ['LOGI-701', 1_900],
   ]);
   let active: {
     readonly controller: AbortController;
@@ -1680,6 +1821,7 @@ export async function createFactorySceneController(
       || selectedTag === 'TRIM-401'
       || selectedTag === 'QA-501'
       || selectedTag === 'EOL-601'
+      || selectedTag === 'LOGI-701'
     ) {
       stationPreviewAnimation.play(selectedTag);
     } else {

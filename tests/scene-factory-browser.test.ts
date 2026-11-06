@@ -6,6 +6,7 @@ import {
   addBodyLoadingStation,
   addDryingOvenStation,
   addEndOfLineTestStation,
+  addFinishedVehicleDockStation,
   addMainConveyorStation,
   addPaintBoothStation,
   addQualityInspectionStation,
@@ -16,6 +17,7 @@ import {
   createConveyorStationMotion,
   createDryingOvenMotion,
   createEndOfLineTestMotion,
+  createFinishedVehicleDockMotion,
   createPaintBoothMotion,
   createQualityInspectionMotion,
   createTrimAssemblyMotion,
@@ -281,6 +283,40 @@ test('EOL-601 end-of-line test station preserves selection identity and animates
   motion.reset();
   expect(roller.toJSON().matrix).toBeUndefined();
   expect(arm.toJSON().matrix).toBeUndefined();
+  expect(flash.visible).toBe(false);
+});
+
+test('LOGI-701 finished vehicle dock preserves selection identity and animates dispatch', () => {
+  const scene = new ICEScene({ id: 'test-scene' });
+  const logistics = FACTORY_EQUIPMENT.find((item) => item.tag === 'LOGI-701');
+  if (!logistics) throw new Error('LOGI-701 fixture is missing');
+
+  const visual = addFinishedVehicleDockStation(scene, logistics);
+  expect(scene.children.length).toBeGreaterThan(20);
+  expect(scene.children.every((child) => (
+    child.selectionId === logistics.selectionId
+  ))).toBe(true);
+  const logisticsBounds = boundsForEquipment(logistics);
+  expect(logisticsBounds.min[0]).toBeCloseTo(32.6);
+  expect(logisticsBounds.min[1]).toBeCloseTo(-0.45);
+  expect(logisticsBounds.min[2]).toBeCloseTo(-3.2);
+  expect(logisticsBounds.max[0]).toBeCloseTo(39.7);
+  expect(logisticsBounds.max[1]).toBeCloseTo(4.7);
+  expect(logisticsBounds.max[2]).toBeCloseTo(3.2);
+
+  const roller = visual.parts.get('roller-0');
+  const barrier = visual.parts.get('dock-barrier');
+  const flash = visual.parts.get('dispatch-flash-0');
+  if (!roller || !barrier || !flash) throw new Error('LOGI-701 motion fixtures are missing');
+
+  const motion = createFinishedVehicleDockMotion(visual);
+  motion.update(0.2);
+  expect(roller.toJSON().matrix).toBeDefined();
+  expect(barrier.toJSON().matrix).toBeDefined();
+  expect(flash.visible).toBe(true);
+  motion.reset();
+  expect(roller.toJSON().matrix).toBeUndefined();
+  expect(barrier.toJSON().matrix).toBeUndefined();
   expect(flash.visible).toBe(false);
 });
 
