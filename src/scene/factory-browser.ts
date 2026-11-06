@@ -95,6 +95,12 @@ export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLik
       max: [x + 3.7, y + 3.6, z + 3.2],
     };
   }
+  if (item.tag === 'POWER-402') {
+    return {
+      min: [x - 2.3, y - 1.7, z - 2.8],
+      max: [x + 2.3, y + 3.5, z + 2.1],
+    };
+  }
   const [width, height, depth] = item.size;
   return {
     min: [x - width / 2, y - height / 2, z - depth / 2],
@@ -718,6 +724,66 @@ export function addFinishedVehicleDockStation(
   return { parts };
 }
 
+export function addPowertrainInstallStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+): FactoryStationVisual {
+  const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    const visualPart = mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      {
+        selectionId: item.selectionId,
+        edgeColor,
+      },
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
+  };
+
+  part('power-floor', [4.2, 0.24, 3.8], [0, -1.3, 0], '#263d43', '#739692');
+  part('power-platform', [3.3, 0.18, 2.8], [0, -0.48, 0], '#718886', '#d9eee4');
+  part('engine-block', [1.9, 1.05, 1.55], [0, 0.18, 0], '#526d79', '#c6e9df');
+  part('engine-head', [1.45, 0.45, 1.2], [0, 0.95, 0], '#6b8589', '#d7f1e6');
+  part('engine-belt', [0.16, 0.72, 1.2], [-1.02, 0.3, 0], '#2b3c45', '#9ab8b2');
+  part('mount-bracket-left', [0.22, 0.65, 0.22], [-1.35, 0.18, -0.95], '#d0a744', '#ffeb9c');
+  part('mount-bracket-right', [0.22, 0.65, 0.22], [1.35, 0.18, 0.95], '#d0a744', '#ffeb9c');
+  [-0.9, 0, 0.9].forEach((offsetX, index) => {
+    part(`roller-${index}`, [0.22, 0.18, 2.45], [offsetX, -0.13, 0], '#c7d6cf', '#f2fff7');
+  });
+  part('lift-post-left', [0.22, 2.7, 0.22], [-1.75, 0.65, -1.25], '#647e81', '#d1ece3');
+  part('lift-post-right', [0.22, 2.7, 0.22], [1.75, 0.65, -1.25], '#647e81', '#d1ece3');
+  part('lift-rail', [3.7, 0.22, 0.22], [0, 2.12, -1.25], '#7e9691', '#e0f2e9');
+  part('lift-beam', [0.22, 0.2, 2.65], [0, 2.45, -1.25], '#d0a744', '#ffeb9c');
+  part('lift-cable', [0.12, 1.05, 0.12], [0, 1.65, -1.25], '#7a9290', '#d8eee3');
+  part('lift-hook', [0.34, 0.32, 0.34], [0, 1.08, -1.25], '#d2a242', '#ffeb9b');
+  part('torque-arm-left', [0.22, 1.05, 0.22], [-1.25, 1.25, 1.15], '#c48149', '#ffdbb3');
+  part('torque-arm-right', [0.22, 1.05, 0.22], [1.25, 1.25, -1.15], '#c48149', '#ffdbb3');
+  part('torque-tool-left', [0.3, 0.3, 0.3], [-1.25, 0.72, 1.15], '#78a39b', '#d6fff1');
+  part('torque-tool-right', [0.3, 0.3, 0.3], [1.25, 0.72, -1.15], '#78a39b', '#d6fff1');
+  part('torque-flash-0', [0.16, 0.16, 0.16], [-1.25, 0.5, 1.15], '#f0c64b', '#fff1a1');
+  part('torque-flash-1', [0.16, 0.16, 0.16], [1.25, 0.5, -1.15], '#77d2c0', '#d3fff1');
+  part('status-pole', [0.12, 0.95, 0.12], [2.05, 1.05, 1.55], '#6d8784', '#c4e6da');
+  part('status-red', [0.26, 0.18, 0.26], [2.05, 1.58, 1.55], '#bf4e4a', '#ffaaa0');
+  part('status-yellow', [0.26, 0.18, 0.26], [2.05, 1.34, 1.55], '#d5a83e', '#ffe99a');
+  part('status-green', [0.26, 0.18, 0.26], [2.05, 1.1, 1.55], '#54b58b', '#b1f5d1');
+  for (const suffix of ['0', '1']) {
+    const flash = parts.get(`torque-flash-${suffix}`);
+    if (flash) flash.visible = false;
+  }
+  return { parts };
+}
+
 function addFactoryEquipment(
   scene: ICEScene,
   stationVisuals: Map<string, FactoryStationVisual>,
@@ -766,6 +832,8 @@ function addFactoryEquipment(
       stationVisuals.set(item.tag, addEndOfLineTestStation(scene, item));
     } else if (item.tag === 'LOGI-701') {
       stationVisuals.set(item.tag, addFinishedVehicleDockStation(scene, item));
+    } else if (item.tag === 'POWER-402') {
+      stationVisuals.set(item.tag, addPowertrainInstallStation(scene, item));
     } else {
       scene.addChild(mesh(
         `equipment-${item.tag}`,
@@ -1316,6 +1384,66 @@ export function createFinishedVehicleDockMotion(
   };
 }
 
+export function createPowertrainInstallMotion(
+  visual: FactoryStationVisual | undefined,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    for (const suffix of ['0', '1']) {
+      const flash = parts?.get(`torque-flash-${suffix}`);
+      if (flash) flash.visible = false;
+    }
+    const green = parts?.get('status-green');
+    const yellow = parts?.get('status-yellow');
+    if (green) green.visible = true;
+    if (yellow) yellow.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const rollerAngle = progress * Math.PI * 10;
+      for (let index = 0; index < 3; index += 1) {
+        const roller = parts.get(`roller-${index}`);
+        if (!roller) continue;
+        const base = roller.position;
+        roller.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], rollerAngle));
+      }
+      const lift = 0.28 * Math.sin(progress * Math.PI * 2);
+      for (const suffix of ['lift-beam', 'lift-cable', 'lift-hook']) {
+        const liftPart = parts.get(suffix);
+        if (!liftPart) continue;
+        const base = liftPart.position;
+        liftPart.setLocalMatrix(translationMatrix(base.x, base.y + lift, base.z));
+      }
+      const torqueSwing = 0.3 * Math.sin(progress * Math.PI * 2);
+      for (const [suffix, multiplier] of [['left', 1], ['right', -1]] as const) {
+        const arm = parts.get(`torque-arm-${suffix}`);
+        if (!arm) continue;
+        const base = arm.position;
+        arm.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], torqueSwing * multiplier));
+      }
+      const toolLift = 0.1 * Math.cos(progress * Math.PI * 2);
+      for (const suffix of ['left', 'right']) {
+        const tool = parts.get(`torque-tool-${suffix}`);
+        if (!tool) continue;
+        const base = tool.position;
+        tool.setLocalMatrix(translationMatrix(base.x, base.y + toolLift, base.z));
+      }
+      const torqueActive = Math.sin(progress * Math.PI * 12) > -0.15;
+      for (const suffix of ['0', '1']) {
+        const flash = parts.get(`torque-flash-${suffix}`);
+        if (flash) flash.visible = torqueActive;
+      }
+      const green = parts.get('status-green');
+      const yellow = parts.get('status-yellow');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+      if (yellow) yellow.visible = !green?.visible;
+    },
+    reset,
+  };
+}
+
 function createProductionVehicle(scene: ICEScene): ProductionVehicle {
   const root = new ICENode({
     id: 'production-run-vehicle',
@@ -1421,7 +1549,8 @@ function createProductionAnimation(
     { tag: 'PAINT-301', startX: -5, endX: 2, durationMs: 1_000, holdMs: 1_000, visual: 'paint' },
     { tag: 'OVEN-302', startX: 2, endX: 8, durationMs: 950, holdMs: 900, visual: 'paint' },
     { tag: 'TRIM-401', startX: 8, endX: 17, durationMs: 1_100, holdMs: 1_100, visual: 'assembly' },
-    { tag: 'QA-501', startX: 17, endX: 29, durationMs: 1_100, holdMs: 1_100, visual: 'complete' },
+    { tag: 'POWER-402', startX: 17, endX: 18, durationMs: 950, holdMs: 900, visual: 'assembly' },
+    { tag: 'QA-501', startX: 18, endX: 29, durationMs: 1_100, holdMs: 1_100, visual: 'complete' },
     { tag: 'EOL-601', startX: 29, endX: 34, durationMs: 1_000, holdMs: 1_000, visual: 'complete' },
     { tag: 'LOGI-701', startX: 34, endX: 38, durationMs: 1_000, holdMs: 1_250, visual: 'complete' },
   ];
@@ -1435,6 +1564,7 @@ function createProductionAnimation(
     ['QA-501', createQualityInspectionMotion(stationVisuals.get('QA-501'))],
     ['EOL-601', createEndOfLineTestMotion(stationVisuals.get('EOL-601'))],
     ['LOGI-701', createFinishedVehicleDockMotion(stationVisuals.get('LOGI-701'))],
+    ['POWER-402', createPowertrainInstallMotion(stationVisuals.get('POWER-402'))],
   ]);
   let active: AbortController | null = null;
   let disposed = false;
@@ -1537,6 +1667,7 @@ function createStationPreviewAnimation(
     ['QA-501', createQualityInspectionMotion(stationVisuals.get('QA-501'))],
     ['EOL-601', createEndOfLineTestMotion(stationVisuals.get('EOL-601'))],
     ['LOGI-701', createFinishedVehicleDockMotion(stationVisuals.get('LOGI-701'))],
+    ['POWER-402', createPowertrainInstallMotion(stationVisuals.get('POWER-402'))],
   ]);
   const durationByTag: ReadonlyMap<string, number> = new Map([
     ['BODY-101', 1_400],
@@ -1548,6 +1679,7 @@ function createStationPreviewAnimation(
     ['QA-501', 2_000],
     ['EOL-601', 1_900],
     ['LOGI-701', 1_900],
+    ['POWER-402', 1_900],
   ]);
   let active: {
     readonly controller: AbortController;
@@ -1822,6 +1954,7 @@ export async function createFactorySceneController(
       || selectedTag === 'QA-501'
       || selectedTag === 'EOL-601'
       || selectedTag === 'LOGI-701'
+      || selectedTag === 'POWER-402'
     ) {
       stationPreviewAnimation.play(selectedTag);
     } else {

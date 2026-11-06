@@ -9,6 +9,7 @@ import {
   addFinishedVehicleDockStation,
   addMainConveyorStation,
   addPaintBoothStation,
+  addPowertrainInstallStation,
   addQualityInspectionStation,
   addTrimAssemblyStation,
   addWeldingRobotStation,
@@ -19,6 +20,7 @@ import {
   createEndOfLineTestMotion,
   createFinishedVehicleDockMotion,
   createPaintBoothMotion,
+  createPowertrainInstallMotion,
   createQualityInspectionMotion,
   createTrimAssemblyMotion,
   createWeldingRobotMotion,
@@ -320,3 +322,36 @@ test('LOGI-701 finished vehicle dock preserves selection identity and animates d
   expect(flash.visible).toBe(false);
 });
 
+test('POWER-402 powertrain station preserves selection identity and animates installation', () => {
+  const scene = new ICEScene({ id: 'test-scene' });
+  const powertrain = FACTORY_EQUIPMENT.find((item) => item.tag === 'POWER-402');
+  if (!powertrain) throw new Error('POWER-402 fixture is missing');
+
+  const visual = addPowertrainInstallStation(scene, powertrain);
+  expect(scene.children.length).toBeGreaterThan(20);
+  expect(scene.children.every((child) => (
+    child.selectionId === powertrain.selectionId
+  ))).toBe(true);
+  const powertrainBounds = boundsForEquipment(powertrain);
+  expect(powertrainBounds.min[0]).toBeCloseTo(16.2);
+  expect(powertrainBounds.min[1]).toBeCloseTo(-0.45);
+  expect(powertrainBounds.min[2]).toBeCloseTo(-5.6);
+  expect(powertrainBounds.max[0]).toBeCloseTo(20.8);
+  expect(powertrainBounds.max[1]).toBeCloseTo(4.75);
+  expect(powertrainBounds.max[2]).toBeCloseTo(-0.7);
+
+  const lift = visual.parts.get('lift-beam');
+  const roller = visual.parts.get('roller-0');
+  const flash = visual.parts.get('torque-flash-0');
+  if (!lift || !roller || !flash) throw new Error('POWER-402 motion fixtures are missing');
+
+  const motion = createPowertrainInstallMotion(visual);
+  motion.update(0.2);
+  expect(lift.toJSON().matrix).toBeDefined();
+  expect(roller.toJSON().matrix).toBeDefined();
+  expect(flash.visible).toBe(true);
+  motion.reset();
+  expect(lift.toJSON().matrix).toBeUndefined();
+  expect(roller.toJSON().matrix).toBeUndefined();
+  expect(flash.visible).toBe(false);
+});
