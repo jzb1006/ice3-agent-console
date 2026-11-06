@@ -12,6 +12,7 @@ import {
   addPaintBoothStation,
   addPowertrainInstallStation,
   addQualityInspectionStation,
+  addStandaloneWeldingRobotStation,
   addTrimAssemblyStation,
   addWeldingRobotStation,
   boundsForEquipment,
@@ -24,6 +25,7 @@ import {
   createPaintBoothMotion,
   createPowertrainInstallMotion,
   createQualityInspectionMotion,
+  createStandaloneWeldingRobotMotion,
   createTrimAssemblyMotion,
   createWeldingRobotMotion,
 } from '../src/scene/factory-browser.ts';
@@ -390,4 +392,38 @@ test('GLASS-403 glass and door station preserves selection identity and animates
   expect(arm.toJSON().matrix).toBeUndefined();
   expect(cup.toJSON().matrix).toBeUndefined();
   expect(flash.visible).toBe(false);
+});
+
+test('ROBOT-201 standalone welding robot preserves selection identity and animates welding', () => {
+  const scene = new ICEScene({ id: 'test-scene' });
+  const robot = FACTORY_EQUIPMENT.find((item) => item.tag === 'ROBOT-201');
+  if (!robot) throw new Error('ROBOT-201 fixture is missing');
+
+  const visual = addStandaloneWeldingRobotStation(scene, robot);
+  expect(scene.children.length).toBeGreaterThan(10);
+  expect(scene.children.every((child) => (
+    child.selectionId === robot.selectionId
+  ))).toBe(true);
+  const robotBounds = boundsForEquipment(robot);
+  expect(robotBounds.min[0]).toBeCloseTo(-9.25);
+  expect(robotBounds.min[1]).toBeCloseTo(1.8);
+  expect(robotBounds.min[2]).toBeCloseTo(-4.75);
+  expect(robotBounds.max[0]).toBeCloseTo(-6.45);
+  expect(robotBounds.max[1]).toBeCloseTo(6.1);
+  expect(robotBounds.max[2]).toBeCloseTo(-2.25);
+
+  const arm = visual.parts.get('robot-arm-lower');
+  const torch = visual.parts.get('weld-torch');
+  const spark = visual.parts.get('weld-spark-0');
+  if (!arm || !torch || !spark) throw new Error('ROBOT-201 motion fixtures are missing');
+
+  const motion = createStandaloneWeldingRobotMotion(visual);
+  motion.update(0.2);
+  expect(arm.toJSON().matrix).toBeDefined();
+  expect(torch.toJSON().matrix).toBeDefined();
+  expect(spark.visible).toBe(true);
+  motion.reset();
+  expect(arm.toJSON().matrix).toBeUndefined();
+  expect(torch.toJSON().matrix).toBeUndefined();
+  expect(spark.visible).toBe(false);
 });

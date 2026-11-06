@@ -59,6 +59,12 @@ export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLik
       max: [x + 2.6, y + 2.8, z + 2.9],
     };
   }
+  if (item.tag === 'ROBOT-201') {
+    return {
+      min: [x - 1.25, y - 1.7, z - 1.25],
+      max: [x + 1.55, y + 2.6, z + 1.25],
+    };
+  }
   if (item.tag === 'PAINT-301') {
     return {
       min: [x - 2.7, y - 1.8, z - 3.2],
@@ -338,6 +344,50 @@ export function addWeldingRobotStation(
   part('status-red', [0.26, 0.18, 0.26], [1.75, 1.68, 2.05], '#bf4e4a', '#ffaaa0');
   part('status-yellow', [0.26, 0.18, 0.26], [1.75, 1.44, 2.05], '#d5a83e', '#ffe99a');
   part('status-green', [0.26, 0.18, 0.26], [1.75, 1.2, 2.05], '#54b58b', '#b1f5d1');
+  return { parts };
+}
+
+export function addStandaloneWeldingRobotStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+): FactoryStationVisual {
+  const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    const visualPart = mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      { selectionId: item.selectionId, edgeColor },
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
+  };
+
+  part('robot-pedestal', [1.55, 0.24, 1.55], [0, -1.45, 0], '#293e46', '#739692');
+  part('robot-base', [0.9, 0.72, 0.9], [0, -0.9, 0], '#bd6844', '#ffd0ac');
+  part('robot-arm-lower', [0.34, 1.65, 0.34], [0, 0.2, 0], '#d47a48', '#ffd4b0');
+  part('robot-arm-upper', [1.55, 0.3, 0.3], [0.38, 1.15, 0], '#e18b4f', '#ffe0bc');
+  part('weld-torch', [0.26, 0.62, 0.26], [1.05, 0.82, 0], '#718e90', '#d4eee3');
+  part('torch-cable', [0.12, 0.65, 0.12], [0.95, 0.1, 0], '#526d72', '#b9d8cf');
+  part('weld-spark-0', [0.18, 0.18, 0.18], [1.05, 0.4, 0], '#f0c64b', '#fff1a1');
+  part('weld-spark-1', [0.14, 0.14, 0.14], [1.28, 0.52, 0], '#77d2c0', '#d3fff1');
+  part('weld-spark-2', [0.12, 0.12, 0.12], [0.83, 0.57, 0], '#f0c64b', '#fff1a1');
+  part('status-pole', [0.12, 0.95, 0.12], [1.05, 0.2, 0.9], '#6d8784', '#c4e6da');
+  part('status-red', [0.26, 0.18, 0.26], [1.05, 0.73, 0.9], '#bf4e4a', '#ffaaa0');
+  part('status-yellow', [0.26, 0.18, 0.26], [1.05, 0.49, 0.9], '#d5a83e', '#ffe99a');
+  part('status-green', [0.26, 0.18, 0.26], [1.05, 0.25, 0.9], '#54b58b', '#b1f5d1');
+  for (const suffix of ['0', '1', '2']) {
+    const spark = parts.get(`weld-spark-${suffix}`);
+    if (spark) spark.visible = false;
+  }
   return { parts };
 }
 
@@ -880,6 +930,8 @@ function addFactoryEquipment(
       stationVisuals.set(item.tag, addMainConveyorStation(scene, item));
     } else if (item.tag === 'WELD-201') {
       stationVisuals.set(item.tag, addWeldingRobotStation(scene, item));
+    } else if (item.tag === 'ROBOT-201') {
+      stationVisuals.set(item.tag, addStandaloneWeldingRobotStation(scene, item));
     } else if (item.tag === 'PAINT-301') {
       stationVisuals.set(item.tag, addPaintBoothStation(scene, item));
     } else if (item.tag === 'OVEN-302') {
@@ -1079,6 +1131,58 @@ export function createWeldingRobotMotion(
         torch.setLocalMatrix(translationMatrix(
           base.x + Math.sin(progress * Math.PI * 2) * 0.22,
           base.y + Math.cos(progress * Math.PI * 2) * 0.12,
+          base.z,
+        ));
+      }
+      const sparkActive = Math.sin(progress * Math.PI * 12) > 0.2;
+      for (const suffix of ['0', '1', '2']) {
+        const spark = parts.get(`weld-spark-${suffix}`);
+        if (spark) spark.visible = sparkActive;
+      }
+      const green = parts.get('status-green');
+      const yellow = parts.get('status-yellow');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+      if (yellow) yellow.visible = !green?.visible;
+    },
+    reset,
+  };
+}
+
+export function createStandaloneWeldingRobotMotion(
+  visual: FactoryStationVisual | undefined,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    for (const suffix of ['0', '1', '2']) {
+      const spark = parts?.get(`weld-spark-${suffix}`);
+      if (spark) spark.visible = false;
+    }
+    const green = parts?.get('status-green');
+    const yellow = parts?.get('status-yellow');
+    if (green) green.visible = true;
+    if (yellow) yellow.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const swing = 0.52 * Math.sin(progress * Math.PI * 2);
+      const lowerArm = parts.get('robot-arm-lower');
+      if (lowerArm) {
+        const base = lowerArm.position;
+        lowerArm.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], swing));
+      }
+      const upperArm = parts.get('robot-arm-upper');
+      if (upperArm) {
+        const base = upperArm.position;
+        upperArm.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], -swing * 1.2));
+      }
+      const torch = parts.get('weld-torch');
+      if (torch) {
+        const base = torch.position;
+        torch.setLocalMatrix(translationMatrix(
+          base.x + Math.sin(progress * Math.PI * 2) * 0.18,
+          base.y + Math.cos(progress * Math.PI * 2) * 0.1,
           base.z,
         ));
       }
@@ -1675,6 +1779,7 @@ function createProductionAnimation(
     ['BODY-101', createBodyStationMotion(stationVisuals.get('BODY-101'))],
     ['CONV-101', createConveyorStationMotion(stationVisuals.get('CONV-101'))],
     ['WELD-201', createWeldingRobotMotion(stationVisuals.get('WELD-201'))],
+    ['ROBOT-201', createStandaloneWeldingRobotMotion(stationVisuals.get('ROBOT-201'))],
     ['PAINT-301', createPaintBoothMotion(stationVisuals.get('PAINT-301'))],
     ['OVEN-302', createDryingOvenMotion(stationVisuals.get('OVEN-302'))],
     ['TRIM-401', createTrimAssemblyMotion(stationVisuals.get('TRIM-401'))],
@@ -1779,6 +1884,7 @@ function createStationPreviewAnimation(
     ['BODY-101', createBodyStationMotion(stationVisuals.get('BODY-101'))],
     ['CONV-101', createConveyorStationMotion(stationVisuals.get('CONV-101'))],
     ['WELD-201', createWeldingRobotMotion(stationVisuals.get('WELD-201'))],
+    ['ROBOT-201', createStandaloneWeldingRobotMotion(stationVisuals.get('ROBOT-201'))],
     ['PAINT-301', createPaintBoothMotion(stationVisuals.get('PAINT-301'))],
     ['OVEN-302', createDryingOvenMotion(stationVisuals.get('OVEN-302'))],
     ['TRIM-401', createTrimAssemblyMotion(stationVisuals.get('TRIM-401'))],
@@ -1792,6 +1898,7 @@ function createStationPreviewAnimation(
     ['BODY-101', 1_400],
     ['CONV-101', 1_400],
     ['WELD-201', 1_700],
+    ['ROBOT-201', 1_700],
     ['PAINT-301', 1_800],
     ['OVEN-302', 1_800],
     ['TRIM-401', 1_900],
@@ -2068,6 +2175,7 @@ export async function createFactorySceneController(
       selectedTag === 'BODY-101'
       || selectedTag === 'CONV-101'
       || selectedTag === 'WELD-201'
+      || selectedTag === 'ROBOT-201'
       || selectedTag === 'PAINT-301'
       || selectedTag === 'OVEN-302'
       || selectedTag === 'TRIM-401'
