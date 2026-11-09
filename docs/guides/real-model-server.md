@@ -28,7 +28,7 @@ npm run dev
 
 ## 请求路径
 
-服务端发送兼容 chat-completion 的请求，其中包含六个批准的 Scene Tool 定义。它将兼容
+服务端发送兼容 chat-completion 的请求，其中包含批准的 Scene Tool 定义。它将兼容
 text 和 tool-call response 转换为共享 event stream。
 
 ## 凭据规则

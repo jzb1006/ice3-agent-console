@@ -13,7 +13,7 @@ Agent 需要检查和操作 Scene，但允许任意 Engine 访问会让应用耦
 
 ## 决策
 
-共享 protocol 暴露六个经过校验的 Scene Tool。Scene controller 通过公开 `ice3` API
+共享 protocol 暴露经过校验的 Scene Tool。Scene controller 通过公开 `ice3` API
 执行允许的 tool。Model output 不能访问 Renderer internals、GPU object、私有 Scene
 Node 或任意应用 function。
 

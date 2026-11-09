@@ -111,6 +111,7 @@ API key 只保留在服务端。`/health` 报告运行模式和接口 host，不
 - `set_camera_view`
 - `clear_scene_focus`
 
+`set_camera_view` 使用 `view: "area"` 时还需要提供设备 catalog 中的 `area` 名称。
 未知工具会被拒绝。参数格式错误时只显示错误，不执行工具。
 
 ## 验证

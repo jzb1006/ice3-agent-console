@@ -89,7 +89,12 @@ Server 使用 Server-Sent Events。每个 `data:` payload 是一个 JSON event�
 { "view": "overview" }
 ```
 
-允许的 view 为 `overview`、`area`、`equipment` 和 `top`。
+允许的 view 为 `overview`、`area`、`equipment` 和 `top`。当 `view` 为 `area` 时，
+需要额外提供设备 catalog 中存在的区域名称：
+
+```json
+{ "view": "area", "area": "涂装车间" }
+```
 
 ### `clear_scene_focus`
 
