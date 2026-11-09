@@ -2,13 +2,11 @@ import {
   ICE3,
   ICEBasicMaterial,
   ICEBoxGeometry,
-  ICELabel,
   ICEOrbitController,
   ICEPerspectiveCamera,
   ICENode,
   ICEMesh,
   ICEScene,
-  ICEWorldLayer,
 } from 'ice3';
 import type {
   CameraView,
@@ -2021,41 +2019,13 @@ export async function createFactorySceneController(
   camera.setPosition(overview.position).setTarget(overview.target);
   let orbit = new ICEOrbitController(engine, camera).start();
   engine.setScene(scene).setCamera(camera);
-
-  const worldLayer = new ICEWorldLayer({
-    id: 'factory-equipment-labels',
-    order: 10,
-    interactive: false,
-    passThrough: true,
-  });
-  const worldLabels = new Map<string, ICELabel>();
-  for (const record of records) {
-    const anchor = engine.findBySelectionId(record.selectionId);
-    const tag = typeof record.metadata?.equipmentTag === 'string'
-      ? record.metadata.equipmentTag
-      : record.selectionId;
-    if (!anchor) continue;
-    const label = new ICELabel({
-      id: `equipment-label-${tag}`,
-      text: `${tag} · ${record.name}`,
-      anchorId: anchor.id,
-      color: '#eafff8',
-      background: 'rgba(7, 18, 22, 0.88)',
-      padding: 5,
-    });
-    label.visible = false;
-    worldLabels.set(record.selectionId, label);
-    worldLayer.addChild(label);
-  }
-  engine.addLayer(worldLayer).start();
+  engine.start();
 
   let motion: AbortController | null = null;
   let selectionBlink: SelectionBlinkHandle | null = null;
   let logicalSelection: readonly string[] = [];
   let programmaticSelectionDepth = 0;
   let view: CameraView = 'overview';
-  let activeProductionSelection: string | null = null;
-  let productionRunActive = false;
   let disposed = false;
   const selectionListeners = new Set<(ids: readonly string[]) => void>();
   const intentListeners = new Set<() => void>();
@@ -2089,15 +2059,6 @@ export async function createFactorySceneController(
       visible: options.visibleViewport?.() ?? { x: 0, y: 0, ...viewport },
       fovDegrees: camera.fov,
     };
-  };
-
-  const updateWorldLabels = (ids: readonly string[]): void => {
-    const visibleIds = new Set(ids);
-    if (activeProductionSelection) visibleIds.add(activeProductionSelection);
-    for (const [selectionId, label] of worldLabels) {
-      label.visible = visibleIds.has(selectionId);
-    }
-    engine.requestRender('world-labels');
   };
 
   const setView = async (next: CameraView, area?: string): Promise<void> => {
@@ -2147,8 +2108,6 @@ export async function createFactorySceneController(
     selectionIdForTag,
     (selectionId) => {
       logicalSelection = selectionId ? [selectionId] : [];
-      activeProductionSelection = selectionId;
-      updateWorldLabels(logicalSelection);
       applyProgrammaticSelection(logicalSelection);
       options.onProductionStage?.(selectionId);
     },
@@ -2166,10 +2125,8 @@ export async function createFactorySceneController(
       stationPreviewAnimation.cancel();
       stopSelectionBlink(false);
       logicalSelection = [...new Set(ids)];
-      activeProductionSelection = null;
       applyProgrammaticSelection(logicalSelection);
       startSelectionBlink(logicalSelection);
-      updateWorldLabels(logicalSelection);
     },
     async focus(bounds: ICEGeometryBoundsLike): Promise<void> {
       view = 'equipment';
@@ -2182,15 +2139,10 @@ export async function createFactorySceneController(
     async playProduction(signal?: AbortSignal): Promise<void> {
       stationPreviewAnimation.cancel();
       stopSelectionBlink(false);
-      productionRunActive = true;
-      try {
-        if (signal?.aborted) return;
-        await setView('overview');
-        if (signal?.aborted) return;
-        await productionAnimation.play(signal);
-      } finally {
-        productionRunActive = false;
-      }
+      if (signal?.aborted) return;
+      await setView('overview');
+      if (signal?.aborted) return;
+      await productionAnimation.play(signal);
     },
     snapshot(): SceneSnapshot {
       return {
@@ -2229,14 +2181,6 @@ export async function createFactorySceneController(
   const cancelAgentMotion = (): void => {
     stopSelectionBlink();
     productionAnimation.cancel();
-    if (productionRunActive) {
-      productionRunActive = false;
-      activeProductionSelection = null;
-      logicalSelection = [];
-      applyProgrammaticSelection([]);
-      updateWorldLabels([]);
-      options.onProductionStage?.(null);
-    }
     stationPreviewAnimation.cancel();
     motion?.abort();
     motion = null;
@@ -2251,8 +2195,6 @@ export async function createFactorySceneController(
       applyProgrammaticSelection,
     );
     logicalSelection = ids;
-    activeProductionSelection = null;
-    updateWorldLabels(ids);
     const selectedTag = ids[0] ? tagForSelectionId(ids[0]) : undefined;
     if (
       selectedTag === 'BODY-101'
@@ -2309,8 +2251,6 @@ export async function createFactorySceneController(
       stopSelectionBlink(false);
       productionAnimation.dispose();
       stationPreviewAnimation.dispose();
-      engine.removeLayer(worldLayer);
-      worldLayer.dispose();
       motion?.abort();
       orbit.dispose();
       engine.destroy();
