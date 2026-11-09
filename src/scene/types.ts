@@ -33,13 +33,32 @@ export interface EquipmentRecord {
   readonly bounds: ICEGeometryBoundsLike;
 }
 
+export interface SceneDiagnostics {
+  readonly fps: number;
+  readonly cpuFrameTimeMs: number;
+  readonly backend: 'webgl2' | 'webgpu' | 'fake';
+  readonly drawCalls: number;
+  readonly renderedMeshes: number;
+  readonly renderedBatches: number;
+  readonly gpuBytes: number;
+  readonly selectionCount: number;
+  readonly contextLossCount: number;
+  readonly lastPickTimeMs: number;
+  readonly lastDiagnostic?: Readonly<{
+    readonly severity: 'error' | 'warning' | 'info';
+    readonly code: string;
+    readonly message: string;
+  }>;
+}
+
 export interface ScenePort {
   records(): readonly EquipmentRecord[];
   setSelection(ids: readonly string[]): void;
   focus(bounds: ICEGeometryBoundsLike): Promise<void>;
-  setView(view: CameraView): Promise<void>;
+  setView(view: CameraView, area?: string): Promise<void>;
   readonly playProduction?: (signal?: AbortSignal) => Promise<void>;
   snapshot(): SceneSnapshot;
+  diagnostics?(): SceneDiagnostics;
 }
 
 export interface SceneController extends ScenePort {

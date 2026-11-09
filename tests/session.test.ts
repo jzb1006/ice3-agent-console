@@ -3,6 +3,7 @@ import { expect } from '#test-expect';
 import { test } from 'node:test';
 import {
   createSession,
+  commandForTool,
   type SessionView,
 } from '../src/app/session.js';
 import type { RunTransport } from '../src/protocol/run-input.js';
@@ -135,6 +136,17 @@ test('routes a complete scene tool call to the controller', async () => {
     selectionIds: ['ice3-virtual-auto-plant/equipment/ROBOT-201'],
   }]);
   expect(session.state.status).toBe('idle');
+});
+
+test('preserves the area argument for area camera commands', () => {
+  expect(commandForTool('set_camera_view', {
+    view: 'area',
+    area: '涂装车间',
+  })).toEqual({
+    type: 'camera',
+    view: 'area',
+    area: '涂装车间',
+  });
 });
 
 test('clears the busy state after an asynchronous scene tool completes', async () => {

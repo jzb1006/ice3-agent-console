@@ -51,13 +51,37 @@ export class SceneCommandExecutor {
           message: `已定位 ${selected[0]!.name}`,
         };
       }
-      case 'camera':
-        await this.scene.setView(command.view ?? 'overview');
+      case 'camera': {
+        const view = command.view ?? 'overview';
+        const area = command.area?.trim();
+        if (view === 'area') {
+          if (!area) {
+            return {
+              ok: false,
+              selectionIds: this.scene.snapshot().selectedIds,
+              message: '区域视角需要提供区域名称',
+            };
+          }
+          const knownArea = this.scene.records().some(
+            (record) => record.metadata?.area === area,
+          );
+          if (!knownArea) {
+            return {
+              ok: false,
+              selectionIds: this.scene.snapshot().selectedIds,
+              message: `未找到区域：${area}`,
+            };
+          }
+        }
+        await this.scene.setView(view, area);
         return {
           ok: true,
           selectionIds: this.scene.snapshot().selectedIds,
-          message: `已切换至 ${command.view ?? 'overview'} 视角`,
+          message: view === 'area'
+            ? `已切换至${area}区域视角`
+            : `已切换至 ${view} 视角`,
         };
+      }
       case 'clear':
         this.scene.setSelection([]);
         await this.scene.setView('overview');

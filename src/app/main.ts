@@ -5,6 +5,7 @@ import { EquipmentCard } from '../view/equipment-card.js';
 import { createQuickActions } from '../view/quick-actions.js';
 import { StageView } from '../view/stage.js';
 import { ConsoleStatus } from '../view/status.js';
+import { DiagnosticsPanel } from '../view/diagnostics.js';
 import { runAgentServer } from '../protocol/client.js';
 import { runAgentLocally } from '../protocol/local-agent.js';
 import type { ThreadState } from '../protocol/reducer.js';
@@ -59,6 +60,7 @@ export async function startConsole(host: HTMLElement): Promise<void> {
   const chat = new ChatPanel(host);
   const equipment = new EquipmentCard(host);
   const status = new ConsoleStatus(host);
+  const diagnostics = new DiagnosticsPanel(host);
   const view = new ConsoleView(chat, equipment, status);
   const demo = resolveDemoMode(window.location.search, true);
   const autoplay = resolveAutoplay(window.location.search, true);
@@ -123,6 +125,7 @@ export async function startConsole(host: HTMLElement): Promise<void> {
       state: () => session.state,
     };
     await scene.whenReady();
+    diagnostics.connect(() => scene.diagnostics?.());
     stage.setReady();
     status.set('场景已就绪');
     session.start();
@@ -133,5 +136,6 @@ export async function startConsole(host: HTMLElement): Promise<void> {
     status.set(message, 'error');
     view.setError(message);
     stage.element.setAttribute('aria-busy', 'false');
+    diagnostics.dispose();
   }
 }

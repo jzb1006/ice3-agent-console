@@ -430,6 +430,89 @@ button {
   color: var(--danger);
 }
 
+.diagnostics-panel {
+  position: absolute;
+  z-index: 4;
+  top: 68px;
+  left: 28px;
+  width: 260px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: rgb(7 13 18 / 92%);
+  box-shadow: 0 16px 42px rgb(0 0 0 / 34%);
+  backdrop-filter: blur(14px);
+}
+
+.diagnostics-panel[hidden] {
+  display: block;
+  width: auto;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.diagnostics-panel[hidden] .diagnostics-body {
+  display: none;
+}
+
+.diagnostics-toggle {
+  min-height: 30px;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: rgb(7 13 18 / 82%);
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.diagnostics-toggle:hover,
+.diagnostics-toggle:focus-visible {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.diagnostics-body {
+  padding: 12px 14px 13px;
+}
+
+.diagnostics-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.diagnostics-body dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px 12px;
+  margin: 0;
+}
+
+.diagnostics-body dt {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.diagnostics-body dd {
+  margin: 2px 0 0;
+  font-size: 12px;
+}
+
+.diagnostics-last {
+  margin: 12px 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 720px) {
   .conversation-panel {
     inset: auto 10px 10px;
@@ -447,6 +530,11 @@ button {
   .brand-lockup {
     top: 18px;
     left: 16px;
+  }
+
+  .diagnostics-panel {
+    top: 62px;
+    left: 12px;
   }
 }
 

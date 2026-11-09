@@ -81,7 +81,11 @@ export function commandForTool(
       if (view !== 'overview' && view !== 'area' && view !== 'equipment' && view !== 'top') {
         return undefined;
       }
-      return { type: 'camera', view: view as CameraView };
+      return {
+        type: 'camera',
+        view: view as CameraView,
+        ...(typeof args.area === 'string' ? { area: args.area } : {}),
+      };
     }
     case 'clear_scene_focus':
       return { type: 'clear' };

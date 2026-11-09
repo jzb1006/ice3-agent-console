@@ -20,6 +20,7 @@ class FakeScene {
   }];
   selection: readonly string[] = [];
   cameraMoves = 0;
+  cameraAreas: Array<string | undefined> = [];
   productionRuns = 0;
   view: CameraView = 'overview';
 
@@ -36,9 +37,10 @@ class FakeScene {
     this.view = 'equipment';
   }
 
-  async setView(view: CameraView): Promise<void> {
+  async setView(view: CameraView, area?: string): Promise<void> {
     this.cameraMoves += 1;
     this.view = view;
+    this.cameraAreas.push(area);
   }
 
   async playProduction(): Promise<void> {
@@ -90,4 +92,28 @@ test('plays the production flow through the scene port', async () => {
 
   expect(result.ok).toBe(true);
   expect(scene.productionRuns).toBe(1);
+});
+
+test('moves to a requested area and rejects an unknown area', async () => {
+  const scene = new FakeScene();
+  const executor = new SceneCommandExecutor(scene);
+  const focused = await executor.execute({
+    type: 'camera',
+    view: 'area',
+    area: ' BodyShop ',
+  });
+
+  expect(focused.ok).toBe(true);
+  expect(scene.view).toBe('area');
+  expect(scene.cameraMoves).toBe(1);
+  expect(scene.cameraAreas).toEqual(['BodyShop']);
+
+  const rejected = await executor.execute({
+    type: 'camera',
+    view: 'area',
+    area: 'UnknownArea',
+  });
+  expect(rejected.ok).toBe(false);
+  expect(rejected.message).toContain('UnknownArea');
+  expect(scene.cameraMoves).toBe(1);
 });

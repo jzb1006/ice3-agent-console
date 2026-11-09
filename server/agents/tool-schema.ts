@@ -77,6 +77,10 @@ export const SCENE_TOOL_DEFINITIONS = Object.freeze([
             type: 'string',
             enum: ['overview', 'area', 'equipment', 'top'],
           },
+          area: {
+            type: 'string',
+            description: '当 view 为 area 时的区域名称，例如“涂装车间”。',
+          },
         },
       },
     },
