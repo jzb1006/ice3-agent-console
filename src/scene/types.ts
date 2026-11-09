@@ -1,5 +1,6 @@
 import type {
   CameraView,
+  EquipmentSummary,
   SceneCommand,
   SceneCommandResult,
   SceneSnapshot,
@@ -51,6 +52,13 @@ export interface SceneDiagnostics {
   }>;
 }
 
+export interface SceneCapture {
+  readonly blob: Blob;
+  readonly snapshot: SceneSnapshot;
+  readonly diagnostics: SceneDiagnostics;
+  readonly selectedEquipment: readonly EquipmentSummary[];
+}
+
 export interface ScenePort {
   records(): readonly EquipmentRecord[];
   setSelection(ids: readonly string[]): void;
@@ -59,6 +67,7 @@ export interface ScenePort {
   readonly playProduction?: (signal?: AbortSignal) => Promise<void>;
   snapshot(): SceneSnapshot;
   diagnostics?(): SceneDiagnostics;
+  capture?(): Promise<SceneCapture>;
 }
 
 export interface SceneController extends ScenePort {

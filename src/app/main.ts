@@ -125,7 +125,10 @@ export async function startConsole(host: HTMLElement): Promise<void> {
       state: () => session.state,
     };
     await scene.whenReady();
-    diagnostics.connect(() => scene.diagnostics?.());
+    diagnostics.connect(
+      () => scene.diagnostics?.(),
+      async () => scene.capture?.(),
+    );
     stage.setReady();
     status.set('场景已就绪');
     session.start();

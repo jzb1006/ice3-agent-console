@@ -504,6 +504,51 @@ button {
   font-size: 12px;
 }
 
+.diagnostics-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.diagnostics-actions button {
+  min-height: 28px;
+  border: 1px solid var(--panel-border);
+  border-radius: 7px;
+  padding: 4px 9px;
+  background: rgb(255 255 255 / 4%);
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.diagnostics-actions button:hover,
+.diagnostics-actions button:focus-visible {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.diagnostics-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.diagnostics-actions span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diagnostics-actions span[data-state="warning"] {
+  color: var(--warning);
+}
+
+.diagnostics-actions span[data-state="error"] {
+  color: var(--danger);
+}
+
 .diagnostics-last {
   margin: 12px 0 0;
   overflow: hidden;

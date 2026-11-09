@@ -1,4 +1,4 @@
-import type { SceneDiagnostics } from '../scene/types.js';
+import type { SceneCapture, SceneDiagnostics } from '../scene/types.js';
 
 function formatNumber(value: number, digits = 0): string {
   return Number.isFinite(value) ? value.toFixed(digits) : '-';
@@ -15,6 +15,9 @@ export class DiagnosticsPanel {
   readonly element: HTMLElement;
   private readonly toggle: HTMLButtonElement;
   private readonly body: HTMLElement;
+  private readonly captureButton: HTMLButtonElement;
+  private readonly alert: HTMLElement;
+  private capture: (() => Promise<SceneCapture | undefined>) | undefined;
   private timer: ReturnType<typeof setInterval> | null = null;
 
   constructor(host: HTMLElement) {
@@ -48,17 +51,33 @@ export class DiagnosticsPanel {
         <div><dt>当前选择</dt><dd data-role="diagnostics-selection">--</dd></div>
         <div><dt>上下文丢失</dt><dd data-role="diagnostics-context-loss">--</dd></div>
       </dl>
+      <div class="diagnostics-actions">
+        <button type="button" data-role="diagnostics-capture">导出现场证据</button>
+        <span data-role="diagnostics-alert" data-state="ok">运行正常</span>
+      </div>
       <p class="diagnostics-last" data-role="diagnostics-last">等待引擎数据</p>
     `;
     this.element.append(this.toggle, this.body);
     host.append(this.element);
+    this.captureButton = this.body.querySelector<HTMLButtonElement>(
+      '[data-role="diagnostics-capture"]',
+    )!;
+    this.alert = this.body.querySelector<HTMLElement>('[data-role="diagnostics-alert"]')!;
+    this.captureButton.addEventListener('click', () => {
+      void this.exportCapture();
+    });
     this.toggle.addEventListener('click', () => {
       this.element.hidden = !this.element.hidden;
       this.toggle.setAttribute('aria-expanded', String(!this.element.hidden));
     });
   }
 
-  connect(read: () => SceneDiagnostics | undefined): void {
+  connect(
+    read: () => SceneDiagnostics | undefined,
+    capture?: () => Promise<SceneCapture | undefined>,
+  ): void {
+    this.capture = capture;
+    this.captureButton.disabled = !capture;
     const update = (): void => {
       const diagnostics = read();
       if (diagnostics) this.render(diagnostics);
@@ -80,9 +99,75 @@ export class DiagnosticsPanel {
     text('diagnostics-gpu-bytes').textContent = formatBytes(diagnostics.gpuBytes);
     text('diagnostics-selection').textContent = formatNumber(diagnostics.selectionCount);
     text('diagnostics-context-loss').textContent = formatNumber(diagnostics.contextLossCount);
+    const alerts: string[] = [];
+    let alertState: 'ok' | 'warning' | 'error' = 'ok';
+    if (diagnostics.contextLossCount > 0) {
+      alerts.push(`上下文丢失 ${diagnostics.contextLossCount} 次`);
+      alertState = 'error';
+    }
+    if (diagnostics.lastDiagnostic) {
+      alerts.push(diagnostics.lastDiagnostic.message);
+      if (diagnostics.lastDiagnostic.severity === 'error') alertState = 'error';
+      else if (alertState !== 'error') alertState = 'warning';
+    }
+    if (diagnostics.fps > 0 && diagnostics.fps < 30) {
+      alerts.push('帧率偏低');
+      if (alertState === 'ok') alertState = 'warning';
+    }
+    if (diagnostics.cpuFrameTimeMs > 33.3) {
+      alerts.push('CPU 帧耗时偏高');
+      if (alertState === 'ok') alertState = 'warning';
+    }
+    if (diagnostics.drawCalls > 1_500) {
+      alerts.push('绘制调用偏高');
+      if (alertState === 'ok') alertState = 'warning';
+    }
+    if (diagnostics.gpuBytes > 128 * 1024 * 1024) {
+      alerts.push('GPU 缓存偏高');
+      if (alertState === 'ok') alertState = 'warning';
+    }
+    this.alert.dataset.state = alertState;
+    this.alert.textContent = alerts.length > 0 ? alerts.join('；') : '运行正常';
     text('diagnostics-last').textContent = diagnostics.lastDiagnostic
       ? `${diagnostics.lastDiagnostic.severity}: ${diagnostics.lastDiagnostic.message}`
       : `最近拾取 ${formatNumber(diagnostics.lastPickTimeMs, 2)} ms`;
+  }
+
+  private async exportCapture(): Promise<void> {
+    if (!this.capture) return;
+    const status = this.alert;
+    try {
+      const capture = await this.capture();
+      if (!capture) return;
+      const document = this.element.ownerDocument;
+      const window = document.defaultView;
+      if (!window?.URL?.createObjectURL) throw new Error('当前浏览器不支持文件导出');
+      const stamp = new Date().toISOString().replace(/[.:]/g, '-');
+      const download = (blob: Blob, suffix: string): void => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `ice3-scene-${stamp}.${suffix}`;
+        document.body?.append(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => window.URL.revokeObjectURL(url), 0);
+      };
+      download(capture.blob, 'png');
+      download(new Blob([
+        JSON.stringify({
+          capturedAt: new Date().toISOString(),
+          snapshot: capture.snapshot,
+          diagnostics: capture.diagnostics,
+          selectedEquipment: capture.selectedEquipment,
+        }, null, 2),
+      ], { type: 'application/json' }), 'json');
+      status.dataset.state = 'ok';
+      status.textContent = '已导出 PNG + JSON';
+    } catch (error) {
+      status.dataset.state = 'error';
+      status.textContent = error instanceof Error ? error.message : '导出失败';
+    }
   }
 
   dispose(): void {

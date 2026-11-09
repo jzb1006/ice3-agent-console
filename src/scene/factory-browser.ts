@@ -22,6 +22,7 @@ import { SceneCommandExecutor } from './controller.js';
 import type {
   EquipmentRecord,
   ICEGeometryBoundsLike,
+  SceneCapture,
   SceneController,
   SceneDiagnostics,
   SceneStatusListener,
@@ -36,6 +37,7 @@ import {
 } from './selection-blink.js';
 import { moveCamera, type CameraPose } from './camera-controller.js';
 import { applyUserSelection } from './user-selection.js';
+import { selectionIdsWithRelated } from './relations.js';
 
 interface BrowserSceneOptions {
   readonly stage: HTMLElement;
@@ -2083,7 +2085,7 @@ export async function createFactorySceneController(
   const applyProgrammaticSelection = (ids: readonly string[]): void => {
     programmaticSelectionDepth += 1;
     try {
-      engine.setSelection(ids);
+      engine.setSelection(selectionIdsWithRelated(ids, records));
     } finally {
       programmaticSelectionDepth -= 1;
     }
@@ -2176,6 +2178,34 @@ export async function createFactorySceneController(
           : {}),
       };
     },
+    async capture(): Promise<SceneCapture> {
+      const blob = await engine.capture();
+      const selectedEquipment = logicalSelection.flatMap((selectionId) => {
+        const record = records.find((item) => item.selectionId === selectionId);
+        if (!record) return [];
+        const metadata = record.metadata ?? {};
+        return [{
+          selectionId: record.selectionId,
+          name: record.name,
+          tag: typeof metadata.equipmentTag === 'string'
+            ? metadata.equipmentTag
+            : undefined,
+          stage: typeof metadata.processStage === 'string'
+            ? metadata.processStage
+            : undefined,
+          area: typeof metadata.area === 'string' ? metadata.area : undefined,
+          connectionCount: Array.isArray(metadata.connections)
+            ? metadata.connections.length
+            : 0,
+        }];
+      });
+      return {
+        blob,
+        snapshot: port.snapshot(),
+        diagnostics: port.diagnostics(),
+        selectedEquipment,
+      };
+    },
   };
   const executor = new SceneCommandExecutor(port);
   const cancelAgentMotion = (): void => {
@@ -2231,6 +2261,7 @@ export async function createFactorySceneController(
     playProduction: port.playProduction,
     snapshot: port.snapshot,
     diagnostics: port.diagnostics,
+    capture: port.capture,
     execute(command: SceneCommand, signal?: AbortSignal): Promise<SceneCommandResult> {
       return executor.execute(command, signal);
     },
