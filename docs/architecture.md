@@ -34,7 +34,7 @@ Scene 在多次 run 期间保持挂载。Conversation state 不会成为 Engine 
 | Protocol reducer | 将流式 model event 转换为 text 和 tool item |
 | Session | 管理单次 run、cancellation、autoplay 和 tool-result update |
 | Scene controller | 校验允许的 tool argument 并调用公开 ICE3 API |
-| Browser Scene | 管理 camera、区域 Bounds、稳定 Selection highlight、诊断快照、panel Bounds 和 stage lifecycle |
+| Browser Scene | 管理 camera、区域 Bounds、设备关系高亮、诊断快照、场景证据导出、panel Bounds 和 stage lifecycle |
 | Demo Asset 配置 | 集中定义虚拟汽车制造工厂的 identity、标题和设备选择命名空间 |
 | Runtime Asset | 真实工厂模型接入时使用 Studio 导出的 fine/coarse Tileset、binding manifest 和设备 catalog |
 | Local transport | 在浏览器中运行确定性脚本 Agent |
@@ -62,8 +62,8 @@ panel 覆盖的可见 stage 区域。
 设备卡 Selection，并恢复页面初次加载完成时的全厂相机位姿和空 Selection。
 
 区域相机由当前设备 catalog 的 Bounds 动态合并，不依赖固定的工位坐标。设备 Selection
-通过场景高亮和右侧设备卡反馈；Engine 的只读诊断快照由 UI 面板周期读取，Agent 不直接
-持有 renderer 或 GPU 对象。
+通过场景高亮和右侧设备卡反馈；诊断面板读取 Engine 快照并在超过阈值时告警，场景证据
+导出同时保存 PNG 和 JSON 上下文，Agent 不直接持有 renderer 或 GPU 对象。
 
 ## Asset 加载与首屏
 
