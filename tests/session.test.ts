@@ -149,6 +149,19 @@ test('preserves the area argument for area camera commands', () => {
   });
 });
 
+test('preserves the stage argument for equipment searches', () => {
+  expect(commandForTool('find_equipment', {
+    query: '机器人',
+    stage: '车身焊装',
+    area: '车身车间',
+  })).toEqual({
+    type: 'find',
+    query: '机器人',
+    stage: '车身焊装',
+    area: '车身车间',
+  });
+});
+
 test('clears the busy state after an asynchronous scene tool completes', async () => {
   let release!: () => void;
   const scene = new FakeScene();

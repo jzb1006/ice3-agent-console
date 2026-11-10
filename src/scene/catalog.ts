@@ -12,13 +12,18 @@ export interface EquipmentCatalogEntry extends EquipmentSummary {
   readonly searchText: string;
 }
 
+export interface EquipmentCatalog {
+  readonly entries: readonly EquipmentCatalogEntry[];
+  find(query: EquipmentQuery): readonly EquipmentCatalogEntry[];
+}
+
 function text(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
 export function createEquipmentCatalog(
   records: readonly Pick<EquipmentRecord, 'selectionId' | 'name' | 'metadata'>[],
-) {
+): EquipmentCatalog {
   const entries: readonly EquipmentCatalogEntry[] = Object.freeze(
     records.map((record) => {
       const tag = text(record.metadata?.equipmentTag);

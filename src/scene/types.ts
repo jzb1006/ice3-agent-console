@@ -62,6 +62,7 @@ export interface SceneCapture {
 export interface ScenePort {
   records(): readonly EquipmentRecord[];
   setSelection(ids: readonly string[]): void;
+  readonly highlightSelection?: (ids: readonly string[]) => void;
   focus(bounds: ICEGeometryBoundsLike): Promise<void>;
   setView(view: CameraView, area?: string): Promise<void>;
   readonly playProduction?: (signal?: AbortSignal) => Promise<void>;

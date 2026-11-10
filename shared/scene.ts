@@ -19,6 +19,7 @@ export interface SceneCommand {
     | 'clear'
     | 'production';
   readonly query?: string;
+  readonly stage?: string;
   readonly selectionIds?: readonly string[];
   readonly area?: string;
   readonly durationMs?: number;

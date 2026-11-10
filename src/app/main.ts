@@ -10,6 +10,7 @@ import { runAgentServer } from '../protocol/client.js';
 import { runAgentLocally } from '../protocol/local-agent.js';
 import type { ThreadState } from '../protocol/reducer.js';
 import { createFactorySceneController } from '../scene/factory-browser.js';
+import { createEquipmentCatalog } from '../scene/catalog.js';
 import { resolveVisibleViewport } from '../scene/focus-framing.js';
 import type { SceneStatusUpdate } from '../scene/types.js';
 import {
@@ -21,6 +22,7 @@ import {
   type AgentConsoleSession,
   type SessionView,
 } from './session.js';
+import { EquipmentBrowser } from '../view/equipment-browser.js';
 
 class ConsoleView implements SessionView {
   constructor(
@@ -111,6 +113,33 @@ export async function startConsole(host: HTMLElement): Promise<void> {
     scene.onSelection((ids) => {
       session?.setSelectedEquipment(ids[0] ?? null);
       session?.notifyUserSceneIntent();
+    });
+    const equipmentCatalog = createEquipmentCatalog(scene.records());
+    new EquipmentBrowser(chat.browserArea, equipmentCatalog, {
+      onSelect: async (entry) => {
+        session?.notifyUserSceneIntent();
+        try {
+          const result = await scene.execute({
+            type: 'focus',
+            selectionIds: [entry.selectionId],
+          });
+          if (result.ok) session?.setSelectedEquipment(entry.selectionId);
+          status.set(result.message, result.ok ? 'ready' : 'error');
+        } catch (error) {
+          const message = `设备定位失败：${
+            error instanceof Error ? error.message : String(error)
+          }`;
+          status.set(message, 'error');
+          view.setError(message);
+        }
+      },
+      onError: (error) => {
+        const message = `设备定位失败：${
+          error instanceof Error ? error.message : String(error)
+        }`;
+        status.set(message, 'error');
+        view.setError(message);
+      },
     });
     createQuickActions(chat.composerArea, (prompt) => {
       void session?.send(prompt);

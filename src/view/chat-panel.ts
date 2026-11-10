@@ -51,6 +51,7 @@ export class ChatPanel {
   readonly submit: HTMLButtonElement;
   readonly stateLabel: HTMLElement;
   readonly composerArea: HTMLElement;
+  readonly browserArea: HTMLElement;
   private readonly scroller: HTMLElement;
   private readonly localUsers: LocalUserMessage[] = [];
   private readonly introPrompt: string;
@@ -86,6 +87,7 @@ export class ChatPanel {
         <span data-role="agent-mode">剧本模式</span>
         <span data-role="agent-transport">服务端</span>
       </div>
+      <section class="equipment-browser-slot" data-role="equipment-browser-slot"></section>
       <section class="conversation-scroll" data-role="conversation-scroll"
         aria-live="polite"></section>
       <div class="conversation-composer" data-role="composer-area">
@@ -122,6 +124,9 @@ export class ChatPanel {
     )!;
     this.composerArea = this.element.querySelector(
       '[data-role="composer-area"]',
+    )!;
+    this.browserArea = this.element.querySelector(
+      '[data-role="equipment-browser-slot"]',
     )!;
     const toggle = this.element.querySelector<HTMLButtonElement>(
       '[data-role="conversation-toggle"]',

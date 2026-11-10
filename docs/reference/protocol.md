@@ -54,10 +54,10 @@ Server 使用 Server-Sent Events。每个 `data:` payload 是一个 JSON event�
 ### `find_equipment`
 
 ```json
-{ "query": "string", "area": "string" }
+{ "query": "string", "stage": "string", "area": "string" }
 ```
 
-两个字段都是可选的，返回匹配的 equipment summary。
+三个字段都是可选的，返回匹配的 equipment summary。
 
 ### `select_equipment`
 

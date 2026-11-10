@@ -98,7 +98,7 @@ button {
   width: min(420px, 38vw);
   min-width: 320px;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   border: 1px solid var(--panel-border);
   border-radius: 18px;
   background: var(--panel);
@@ -191,6 +191,94 @@ button {
   background: rgb(113 216 196 / 9%);
   color: var(--muted);
   font-size: 11px;
+}
+
+.equipment-browser-slot {
+  min-height: 0;
+  padding: 0 14px 10px;
+}
+
+.equipment-browser {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid rgb(139 193 205 / 14%);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 3%);
+}
+
+.equipment-browser__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.equipment-browser__query,
+.equipment-browser__filters select {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid var(--panel-border);
+  border-radius: 7px;
+  padding: 6px 8px;
+  outline: none;
+  background: rgb(0 0 0 / 22%);
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.equipment-browser__query:focus,
+.equipment-browser__filters select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(113 216 196 / 12%);
+}
+
+.equipment-browser__filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.equipment-browser__results {
+  display: grid;
+  gap: 4px;
+  max-height: 156px;
+  overflow: auto;
+  scrollbar-color: rgb(113 216 196 / 35%) transparent;
+}
+
+.equipment-browser__result {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 7px 8px;
+  background: rgb(255 255 255 / 3%);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.equipment-browser__result:hover,
+.equipment-browser__result:focus-visible {
+  border-color: var(--accent);
+  background: rgb(113 216 196 / 8%);
+}
+
+.equipment-browser__result-name {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equipment-browser__result-meta,
+.equipment-browser__empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
 }
 
 .conversation-scroll {

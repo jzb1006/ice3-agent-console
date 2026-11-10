@@ -8,6 +8,7 @@ export const SCENE_TOOL_DEFINITIONS = Object.freeze([
         type: 'object',
         properties: {
           query: { type: 'string' },
+          stage: { type: 'string' },
           area: { type: 'string' },
         },
       },

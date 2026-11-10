@@ -19,6 +19,7 @@ class FakeScene {
     bounds: { min: [-7, 0, -7], max: [7, 5, 7] },
   }];
   selection: readonly string[] = [];
+  highlighted: readonly string[] = [];
   cameraMoves = 0;
   cameraAreas: Array<string | undefined> = [];
   productionRuns = 0;
@@ -30,6 +31,10 @@ class FakeScene {
 
   setSelection(ids: readonly string[]): void {
     this.selection = ids;
+  }
+
+  highlightSelection(ids: readonly string[]): void {
+    this.highlighted = ids;
   }
 
   async focus(): Promise<void> {
@@ -83,6 +88,21 @@ test('focuses and clears a known device', async () => {
   expect(cleared.ok).toBe(true);
   expect(scene.selection).toEqual([]);
   expect(scene.view).toBe('overview');
+});
+
+test('keeps explicit relation highlighting separate from selection', async () => {
+  const scene = new FakeScene();
+  const executor = new SceneCommandExecutor(scene);
+  const result = await executor.execute({
+    type: 'highlight',
+    selectionIds: ['ice3-virtual-auto-plant/equipment/ROBOT-201'],
+  });
+
+  expect(result.ok).toBe(true);
+  expect(scene.selection).toEqual([]);
+  expect(scene.highlighted).toEqual([
+    'ice3-virtual-auto-plant/equipment/ROBOT-201',
+  ]);
 });
 
 test('plays the production flow through the scene port', async () => {

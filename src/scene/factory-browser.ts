@@ -2098,13 +2098,16 @@ export async function createFactorySceneController(
       programmaticSelectionDepth -= 1;
     }
   };
-  const startSelectionBlink = (ids: readonly string[]): void => {
+  const startSelectionBlink = (
+    ids: readonly string[],
+    apply: (selection: readonly string[]) => void = applyProgrammaticSelection,
+  ): void => {
     selectionBlink?.cancel(false);
     logicalSelection = [...new Set(ids)];
     selectionBlink = logicalSelection.length === 0
       ? null
       : blinkSelection(logicalSelection, {
-          apply: applyProgrammaticSelection,
+          apply,
           reducedMotion: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
         });
   };
@@ -2132,6 +2135,13 @@ export async function createFactorySceneController(
   const port = {
     records: () => records,
     setSelection(ids: readonly string[]): void {
+      stationPreviewAnimation.cancel();
+      stopSelectionBlink(false);
+      logicalSelection = [...new Set(ids)];
+      applyDirectSelection(logicalSelection);
+      startSelectionBlink(logicalSelection, applyDirectSelection);
+    },
+    highlightSelection(ids: readonly string[]): void {
       stationPreviewAnimation.cancel();
       stopSelectionBlink(false);
       logicalSelection = [...new Set(ids)];
@@ -2267,6 +2277,7 @@ export async function createFactorySceneController(
     focus: port.focus,
     setView: port.setView,
     playProduction: port.playProduction,
+    highlightSelection: port.highlightSelection,
     snapshot: port.snapshot,
     diagnostics: port.diagnostics,
     capture: port.capture,

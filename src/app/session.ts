@@ -57,6 +57,7 @@ export function commandForTool(
       return {
         type: 'find',
         ...(typeof args.query === 'string' ? { query: args.query } : {}),
+        ...(typeof args.stage === 'string' ? { stage: args.stage } : {}),
         ...(typeof args.area === 'string' ? { area: args.area } : {}),
       };
     case 'select_equipment':

@@ -15,7 +15,11 @@ export class SceneCommandExecutor {
 
     switch (command.type) {
       case 'find': {
-        const matches = catalog.find({ query: command.query, area: command.area });
+        const matches = catalog.find({
+          query: command.query,
+          stage: command.stage,
+          area: command.area,
+        });
         return {
           ok: true,
           selectionIds: matches.map(({ selectionId }) => selectionId),
@@ -29,16 +33,23 @@ export class SceneCommandExecutor {
           })),
         };
       }
-      case 'select':
-      case 'highlight': {
+      case 'select': {
         if (selected.length !== ids.length) return this.invalidSelection(ids, selected);
         this.scene.setSelection(ids);
         return {
           ok: true,
           selectionIds: ids,
-          message: command.type === 'highlight'
-            ? `已高亮 ${ids.length} 台设备`
-            : `已选择 ${ids.length} 台设备`,
+          message: `已选择 ${ids.length} 台设备`,
+        };
+      }
+      case 'highlight': {
+        if (selected.length !== ids.length) return this.invalidSelection(ids, selected);
+        if (this.scene.highlightSelection) this.scene.highlightSelection(ids);
+        else this.scene.setSelection(ids);
+        return {
+          ok: true,
+          selectionIds: ids,
+          message: `已高亮 ${ids.length} 台设备`,
         };
       }
       case 'focus': {
