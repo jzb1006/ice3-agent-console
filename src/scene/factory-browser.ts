@@ -2090,6 +2090,14 @@ export async function createFactorySceneController(
       programmaticSelectionDepth -= 1;
     }
   };
+  const applyDirectSelection = (ids: readonly string[]): void => {
+    programmaticSelectionDepth += 1;
+    try {
+      engine.setSelection(ids);
+    } finally {
+      programmaticSelectionDepth -= 1;
+    }
+  };
   const startSelectionBlink = (ids: readonly string[]): void => {
     selectionBlink?.cancel(false);
     logicalSelection = [...new Set(ids)];
@@ -2110,7 +2118,7 @@ export async function createFactorySceneController(
     selectionIdForTag,
     (selectionId) => {
       logicalSelection = selectionId ? [selectionId] : [];
-      applyProgrammaticSelection(logicalSelection);
+      applyDirectSelection(logicalSelection);
       options.onProductionStage?.(selectionId);
     },
     stationVisuals,
@@ -2222,7 +2230,7 @@ export async function createFactorySceneController(
     const ids = applyUserSelection(
       event.param?.selection ?? [],
       selectableIds,
-      applyProgrammaticSelection,
+      applyDirectSelection,
     );
     logicalSelection = ids;
     const selectedTag = ids[0] ? tagForSelectionId(ids[0]) : undefined;

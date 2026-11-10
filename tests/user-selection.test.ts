@@ -22,6 +22,27 @@ test('applies a known equipment selection once without scheduling a blink', () =
   ]);
 });
 
+test('keeps a user click limited to the clicked equipment', () => {
+  const writes: (readonly string[])[] = [];
+  const selectableWithRelated = new Set([
+    'ice3-virtual-auto-plant/equipment/BODY-101',
+    'ice3-virtual-auto-plant/equipment/CONV-101',
+  ]);
+
+  const selected = applyUserSelection(
+    ['ice3-virtual-auto-plant/equipment/BODY-101'],
+    selectableWithRelated,
+    (ids) => writes.push(ids),
+  );
+
+  expect(selected).toEqual([
+    'ice3-virtual-auto-plant/equipment/BODY-101',
+  ]);
+  expect(writes).toEqual([
+    ['ice3-virtual-auto-plant/equipment/BODY-101'],
+  ]);
+});
+
 test('rejects a plant-wide untagged node from the user selection', () => {
   const writes: (readonly string[])[] = [];
 
