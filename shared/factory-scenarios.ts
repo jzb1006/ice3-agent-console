@@ -57,10 +57,11 @@ const FACTORY_SCENARIO_LIST: readonly FactoryScenario[] = Object.freeze([
     prompt: '带我看车身焊装线',
     keywords: ['车身焊装', '焊装线', '焊装机器人', '点焊机器人', '车身车间'],
     steps: tour([
+      { text: '车身冲压机先完成板材成形，冲压件进入上料工位。', tag: 'PRESS-101' },
       { text: '先看车身上料工位，白车身从物流托盘进入主线。', tag: 'BODY-101' },
       { text: '车身沿输送机进入焊装机器人岛，多个工位协同完成结构连接。', tag: 'CONV-101' },
       { text: '点焊机器人按节拍完成关键焊点，位置和节拍由工艺程序控制。', tag: 'ROBOT-201' },
-      { text: '焊装完成后，车身进入涂装前的交接区域。', tag: 'WELD-201' },
+      { text: '骨架合装站完成车身结构合装，焊装完成后进入涂装前交接。', tag: 'FRAME-202' },
     ]),
   },
   {
@@ -69,7 +70,9 @@ const FACTORY_SCENARIO_LIST: readonly FactoryScenario[] = Object.freeze([
     prompt: '带我看涂装工艺',
     keywords: ['涂装工艺', '喷涂', '喷涂舱', '烘干炉'],
     steps: tour([
+      { text: '涂装前处理槽清洁并活化车身表面，为涂层附着做准备。', tag: 'PREP-301' },
       { text: '自动喷涂舱完成底漆、色漆和清漆的均匀喷涂。', tag: 'PAINT-301' },
+      { text: '车身密封胶站处理焊缝和接缝，提升防水和隔音性能。', tag: 'SEAL-304' },
       { text: '漆面烘干炉稳定控制温度和通过时间，保证涂层固化质量。', tag: 'OVEN-302' },
       { text: '涂装完成的车身离开洁净工艺区，进入总装车间。', tag: 'TRIM-401' },
     ]),
@@ -81,6 +84,7 @@ const FACTORY_SCENARIO_LIST: readonly FactoryScenario[] = Object.freeze([
     keywords: ['总装流程', '总装车间', '动力总成', '玻璃安装', '整车装配'],
     steps: tour([
       { text: '内饰装配工位先完成座舱、线束和内饰模块的安装。', tag: 'TRIM-401' },
+      { text: '底盘与车轮装配站完成悬架、制动和车轮安装。', tag: 'CHASSIS-404' },
       { text: '动力总成安装站把发动机、电驱或混动系统与车身合装。', tag: 'POWER-402' },
       { text: '玻璃与车门安装站完成外覆盖件和密封系统装配。', tag: 'GLASS-403' },
       { text: '整车离开总装线后进入质量中心做下线检查。', tag: 'QA-501' },
@@ -93,7 +97,9 @@ const FACTORY_SCENARIO_LIST: readonly FactoryScenario[] = Object.freeze([
     keywords: ['质量检测', '视觉检测', '终检', '下线测试', '质量中心'],
     steps: tour([
       { text: '视觉质量检测门扫描车身外观、间隙面差和关键装配点。', tag: 'QA-501' },
+      { text: '整车标定站写入控制器参数，并校准摄像头、雷达和底盘系统。', tag: 'CAL-502' },
       { text: '整车下线测试台检查灯光、制动、转向和基础功能状态。', tag: 'EOL-601' },
+      { text: '动态路试道验证车辆行驶、制动和转向表现，合格后进入发运。', tag: 'ROAD-602' },
       { text: '通过终检的车辆进入成品物流月台，等待发运。', tag: 'LOGI-701' },
     ]),
   },

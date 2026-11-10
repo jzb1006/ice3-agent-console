@@ -96,8 +96,19 @@ export async function startConsole(host: HTMLElement): Promise<void> {
     };
     const scene = await createFactorySceneController({
       ...sceneOptions,
-      onProductionStage: (selectionId) => {
-        session?.setSelectedEquipment(selectionId);
+      onProductionStage: ({ selectionId, stageIndex, stageCount, completed }) => {
+        if (selectionId) {
+          const record = scene.records().find((item) => item.selectionId === selectionId);
+          session?.setSelectedEquipment(selectionId);
+          status.set(
+            `生产流 ${stageIndex}/${stageCount}：${record?.name ?? '当前工位'}`,
+            'loading',
+          );
+        } else if (completed) {
+          status.set('生产流已完成：车辆进入成品物流月台');
+        } else {
+          status.set(`生产流准备中：共 ${stageCount} 个工艺阶段`, 'loading');
+        }
       },
     });
     session = createSession({

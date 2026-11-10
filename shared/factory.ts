@@ -35,6 +35,16 @@ const equipment = (
 
 export const FACTORY_EQUIPMENT: readonly FactoryEquipment[] = Object.freeze([
   equipment(
+    'PRESS-101',
+    '车身冲压机',
+    '冲压与上料',
+    '冲压车间',
+    [-23, 1.4, -6],
+    [3.8, 2.8, 3.8],
+    '#697b8a',
+    ['BODY-101'],
+  ),
+  equipment(
     'BODY-101',
     '车身上料工位',
     '冲压与上料',
@@ -65,6 +75,16 @@ export const FACTORY_EQUIPMENT: readonly FactoryEquipment[] = Object.freeze([
     ['ROBOT-201', 'PAINT-301'],
   ),
   equipment(
+    'FRAME-202',
+    '车身骨架合装站',
+    '车身焊装',
+    '车身车间',
+    [-3.5, 1.35, -6],
+    [4.2, 2.7, 3.8],
+    '#9a7048',
+    ['WELD-201', 'PREP-301'],
+  ),
+  equipment(
     'ROBOT-201',
     '一号点焊机器人',
     '车身焊装',
@@ -85,6 +105,16 @@ export const FACTORY_EQUIPMENT: readonly FactoryEquipment[] = Object.freeze([
     ['OVEN-302'],
   ),
   equipment(
+    'PREP-301',
+    '涂装前处理槽',
+    '涂装',
+    '涂装车间',
+    [0, 1.2, -6],
+    [4.2, 2.4, 3.8],
+    '#3f7778',
+    ['PAINT-301'],
+  ),
+  equipment(
     'OVEN-302',
     '漆面烘干炉',
     '涂装',
@@ -95,6 +125,16 @@ export const FACTORY_EQUIPMENT: readonly FactoryEquipment[] = Object.freeze([
     ['TRIM-401'],
   ),
   equipment(
+    'SEAL-304',
+    '车身密封胶站',
+    '涂装',
+    '涂装车间',
+    [9.5, 1.2, -6],
+    [3.8, 2.5, 3.8],
+    '#6d8061',
+    ['OVEN-302', 'TRIM-401'],
+  ),
+  equipment(
     'TRIM-401',
     '内饰装配工位',
     '总装',
@@ -103,6 +143,16 @@ export const FACTORY_EQUIPMENT: readonly FactoryEquipment[] = Object.freeze([
     [4.4, 2.2, 5.2],
     '#587b6f',
     ['POWER-402', 'GLASS-403'],
+  ),
+  equipment(
+    'CHASSIS-404',
+    '底盘与车轮装配站',
+    '总装',
+    '总装车间',
+    [14, 1.25, -6],
+    [4.2, 2.5, 3.8],
+    '#58727d',
+    ['TRIM-401', 'POWER-402'],
   ),
   equipment(
     'POWER-402',
@@ -135,6 +185,16 @@ export const FACTORY_EQUIPMENT: readonly FactoryEquipment[] = Object.freeze([
     ['EOL-601'],
   ),
   equipment(
+    'CAL-502',
+    '整车标定站',
+    '质量检测',
+    '质量中心',
+    [27, 1.2, -6],
+    [3.8, 2.4, 3.8],
+    '#6d668b',
+    ['QA-501', 'EOL-601'],
+  ),
+  equipment(
     'EOL-601',
     '整车下线测试台',
     '终检下线',
@@ -143,6 +203,16 @@ export const FACTORY_EQUIPMENT: readonly FactoryEquipment[] = Object.freeze([
     [4.2, 1.9, 4.6],
     '#8b7048',
     ['LOGI-701'],
+  ),
+  equipment(
+    'ROAD-602',
+    '整车动态路试道',
+    '终检下线',
+    '质量中心',
+    [34, 0.7, -6],
+    [5.5, 0.9, 3.8],
+    '#586d72',
+    ['EOL-601', 'LOGI-701'],
   ),
   equipment(
     'LOGI-701',

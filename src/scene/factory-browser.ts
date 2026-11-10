@@ -44,8 +44,15 @@ interface BrowserSceneOptions {
   readonly visibleViewport?: () => ScreenRect;
   readonly onStatus?: SceneStatusListener;
   readonly onSelection?: (ids: readonly string[]) => void;
-  readonly onProductionStage?: (selectionId: string | null) => void;
+  readonly onProductionStage?: (update: ProductionStageUpdate) => void;
   readonly onUserCameraIntent?: () => void;
+}
+
+export interface ProductionStageUpdate {
+  readonly selectionId: string | null;
+  readonly stageIndex: number;
+  readonly stageCount: number;
+  readonly completed: boolean;
 }
 
 export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLike {
@@ -155,10 +162,13 @@ function mesh(
 }
 
 function addFactoryDecor(scene: ICEScene): void {
-  scene.addChild(mesh('factory-floor', [66, 0.2, 24], [8, -0.7, 0], '#17272b', { edgeColor: '#3b6667' }));
-  scene.addChild(mesh('main-conveyor-bed', [58, 0.25, 3.4], [8, -0.25, 0], '#2a3c42', { edgeColor: '#6f9695' }));
-  scene.addChild(mesh('conveyor-left-rail', [58, 0.45, 0.18], [8, 0.05, -1.65], '#879b98', { edgeColor: '#d6eee1' }));
-  scene.addChild(mesh('conveyor-right-rail', [58, 0.45, 0.18], [8, 0.05, 1.65], '#879b98', { edgeColor: '#d6eee1' }));
+  scene.addChild(mesh('factory-floor', [70, 0.2, 24], [8, -0.7, 0], '#17272b', { edgeColor: '#3b6667' }));
+  scene.addChild(mesh('main-conveyor-bed', [62, 0.25, 3.4], [8, -0.25, 0], '#2a3c42', { edgeColor: '#6f9695' }));
+  scene.addChild(mesh('conveyor-left-rail', [62, 0.45, 0.18], [8, 0.05, -1.65], '#879b98', { edgeColor: '#d6eee1' }));
+  scene.addChild(mesh('conveyor-right-rail', [62, 0.45, 0.18], [8, 0.05, 1.65], '#879b98', { edgeColor: '#d6eee1' }));
+  scene.addChild(mesh('side-process-bed', [62, 0.18, 2.6], [8, -0.48, -6], '#20363d', { edgeColor: '#5e8583' }));
+  scene.addChild(mesh('side-process-rail-near', [62, 0.28, 0.16], [8, -0.18, -4.8], '#728e8b', { edgeColor: '#c2e4d9' }));
+  scene.addChild(mesh('side-process-rail-far', [62, 0.28, 0.16], [8, -0.18, -7.2], '#728e8b', { edgeColor: '#c2e4d9' }));
   for (const x of [-16, -10, -4, 2, 8, 14, 20, 26, 32]) {
     scene.addChild(mesh(`conveyor-support-${x}`, [0.25, 1.25, 3.2], [x, -0.1, 0], '#314b51', { edgeColor: '#5f8585' }));
   }
@@ -1761,22 +1771,29 @@ function createProductionAnimation(
   engine: ICE3,
   vehicle: ProductionVehicle,
   findSelectionId: (tag: string) => string | undefined,
-  onStage: (selectionId: string | null) => void,
+  onStage: (update: ProductionStageUpdate) => void,
   stationVisuals: ReadonlyMap<string, FactoryStationVisual>,
 ): { play(signal?: AbortSignal): Promise<void>; cancel(): void; dispose(): void } {
   const stages: readonly ProductionStage[] = [
     { startX: -30, endX: -23, durationMs: 1_000, holdMs: 850, visual: 'material' },
-    { tag: 'BODY-101', startX: -23, endX: -18, durationMs: 1_150, holdMs: 1_350, visual: 'body' },
-    { tag: 'CONV-101', startX: -18, endX: -12, durationMs: 1_150, holdMs: 1_350, visual: 'body' },
-    { tag: 'WELD-201', startX: -12, endX: -5, durationMs: 1_000, holdMs: 900, visual: 'body' },
-    { tag: 'PAINT-301', startX: -5, endX: 2, durationMs: 1_000, holdMs: 1_000, visual: 'paint' },
-    { tag: 'OVEN-302', startX: 2, endX: 8, durationMs: 950, holdMs: 900, visual: 'paint' },
-    { tag: 'TRIM-401', startX: 8, endX: 17, durationMs: 1_100, holdMs: 1_100, visual: 'assembly' },
-    { tag: 'POWER-402', startX: 17, endX: 18, durationMs: 950, holdMs: 900, visual: 'assembly' },
-    { tag: 'GLASS-403', startX: 18, endX: 22, durationMs: 1_000, holdMs: 950, visual: 'assembly' },
-    { tag: 'QA-501', startX: 22, endX: 29, durationMs: 1_100, holdMs: 1_100, visual: 'complete' },
-    { tag: 'EOL-601', startX: 29, endX: 34, durationMs: 1_000, holdMs: 1_000, visual: 'complete' },
-    { tag: 'LOGI-701', startX: 34, endX: 38, durationMs: 1_000, holdMs: 1_250, visual: 'complete' },
+    { tag: 'PRESS-101', startX: -23, endX: -21, durationMs: 850, holdMs: 750, visual: 'material' },
+    { tag: 'BODY-101', startX: -21, endX: -18, durationMs: 1_050, holdMs: 1_100, visual: 'body' },
+    { tag: 'CONV-101', startX: -18, endX: -13, durationMs: 1_050, holdMs: 1_100, visual: 'body' },
+    { tag: 'WELD-201', startX: -13, endX: -8, durationMs: 950, holdMs: 850, visual: 'body' },
+    { tag: 'FRAME-202', startX: -8, endX: -4, durationMs: 900, holdMs: 800, visual: 'body' },
+    { tag: 'PREP-301', startX: -4, endX: -1, durationMs: 850, holdMs: 750, visual: 'body' },
+    { tag: 'PAINT-301', startX: -1, endX: 3, durationMs: 1_000, holdMs: 900, visual: 'paint' },
+    { tag: 'SEAL-304', startX: 3, endX: 7, durationMs: 850, holdMs: 800, visual: 'paint' },
+    { tag: 'OVEN-302', startX: 7, endX: 11, durationMs: 950, holdMs: 850, visual: 'paint' },
+    { tag: 'TRIM-401', startX: 11, endX: 16, durationMs: 1_000, holdMs: 950, visual: 'assembly' },
+    { tag: 'CHASSIS-404', startX: 16, endX: 20, durationMs: 900, holdMs: 850, visual: 'assembly' },
+    { tag: 'POWER-402', startX: 20, endX: 22, durationMs: 900, holdMs: 850, visual: 'assembly' },
+    { tag: 'GLASS-403', startX: 22, endX: 25, durationMs: 950, holdMs: 850, visual: 'assembly' },
+    { tag: 'QA-501', startX: 25, endX: 29, durationMs: 1_000, holdMs: 900, visual: 'complete' },
+    { tag: 'CAL-502', startX: 29, endX: 31, durationMs: 850, holdMs: 750, visual: 'complete' },
+    { tag: 'EOL-601', startX: 31, endX: 34, durationMs: 950, holdMs: 850, visual: 'complete' },
+    { tag: 'ROAD-602', startX: 34, endX: 38, durationMs: 1_000, holdMs: 950, visual: 'complete' },
+    { tag: 'LOGI-701', startX: 38, endX: 41, durationMs: 900, holdMs: 1_100, visual: 'complete' },
   ];
   const stationMotions = new Map<string, FactoryStationMotion>([
     ['BODY-101', createBodyStationMotion(stationVisuals.get('BODY-101'))],
@@ -1813,16 +1830,26 @@ function createProductionAnimation(
     setProductionVisual(vehicle, 'material');
     vehicle.root.setLocalMatrix(translationMatrix(stages[0]!.startX));
     stationMotions.forEach((motion) => motion.reset());
-    onStage(null);
+    onStage({
+      selectionId: null,
+      stageIndex: 0,
+      stageCount: stages.length,
+      completed: false,
+    });
 
     try {
-      for (const stage of stages) {
+      for (const [stageIndex, stage] of stages.entries()) {
         if (controller.signal.aborted || disposed) return;
         stationMotions.forEach((motion, tag) => {
           if (tag !== stage.tag) motion.reset();
         });
         setProductionVisual(vehicle, stage.visual);
-        onStage(stage.tag ? findSelectionId(stage.tag) ?? null : null);
+        onStage({
+          selectionId: stage.tag ? findSelectionId(stage.tag) ?? null : null,
+          stageIndex: stageIndex + 1,
+          stageCount: stages.length,
+          completed: false,
+        });
         const startedAt = performance.now();
         while (true) {
           if (controller.signal.aborted || disposed) return;
@@ -1845,6 +1872,12 @@ function createProductionAnimation(
           await sleep(16);
         }
       }
+      onStage({
+        selectionId: null,
+        stageIndex: stages.length,
+        stageCount: stages.length,
+        completed: true,
+      });
     } finally {
       if (generation === runGeneration) {
         stationMotions.forEach((motion) => motion.reset());
@@ -2005,8 +2038,8 @@ export async function createFactorySceneController(
     target: [8, 0, 0],
   });
   const overviewBounds: ICEGeometryBoundsLike = {
-    min: [-24, -1, -11],
-    max: [40, 8, 11],
+    min: [-27, -1, -11],
+    max: [44, 8, 11],
   };
   const overviewCenter = center(overviewBounds);
   const overviewRadius = radius(overviewBounds);
@@ -2119,10 +2152,12 @@ export async function createFactorySceneController(
     engine,
     productionVehicle,
     selectionIdForTag,
-    (selectionId) => {
-      logicalSelection = selectionId ? [selectionId] : [];
-      applyDirectSelection(logicalSelection);
-      options.onProductionStage?.(selectionId);
+    (update) => {
+      if (!update.completed) {
+        logicalSelection = update.selectionId ? [update.selectionId] : [];
+        applyDirectSelection(logicalSelection);
+      }
+      options.onProductionStage?.(update);
     },
     stationVisuals,
   );

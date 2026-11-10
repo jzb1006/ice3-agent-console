@@ -68,6 +68,16 @@ test('every built-in scene action targets equipment in the automotive factory', 
   }
 });
 
+test('keeps every equipment connection inside the published factory graph', () => {
+  const knownTags = new Set(FACTORY_EQUIPMENT.map((item) => item.tag));
+  expect(FACTORY_EQUIPMENT.length).toBeGreaterThan(12);
+  for (const item of FACTORY_EQUIPMENT) {
+    for (const connectedTag of item.connections) {
+      expect(knownTags.has(connectedTag)).toBe(true);
+    }
+  }
+});
+
 test('matches the intended scenario without crossing topics', () => {
   expect(matchFactoryScenario('带我看看焊装机器人')?.id).toBe('body-shop');
   expect(matchFactoryScenario('查看涂装工艺')?.id).toBe('paint-shop');
