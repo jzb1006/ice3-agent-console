@@ -86,8 +86,8 @@ test('CONV-101 visual parts preserve the equipment selection identity', () => {
     child.selectionId === conveyor.selectionId
   ))).toBe(true);
   expect(boundsForEquipment(conveyor)).toEqual({
-    min: [-16.8, -1, -2.35],
-    max: [-11.2, 1.8, 2.35],
+    min: [-19.8, -1, -12.35],
+    max: [-14.2, 1.8, -7.65],
   });
 });
 
@@ -118,12 +118,12 @@ test('WELD-201 robot island preserves selection identity and animated pose', () 
     child.selectionId === welding.selectionId
   ))).toBe(true);
   const weldingBounds = boundsForEquipment(welding);
-  expect(weldingBounds.min[0]).toBeCloseTo(-10.6);
+  expect(weldingBounds.min[0]).toBeCloseTo(-11.6);
   expect(weldingBounds.min[1]).toBeCloseTo(-0.1);
-  expect(weldingBounds.min[2]).toBeCloseTo(-2.9);
-  expect(weldingBounds.max[0]).toBeCloseTo(-5.4);
+  expect(weldingBounds.min[2]).toBeCloseTo(-12.9);
+  expect(weldingBounds.max[0]).toBeCloseTo(-6.4);
   expect(weldingBounds.max[1]).toBeCloseTo(4.25);
-  expect(weldingBounds.max[2]).toBeCloseTo(2.9);
+  expect(weldingBounds.max[2]).toBeCloseTo(-7.1);
 
   const arm = visual.parts.get('robot-arm-upper');
   const spark = visual.parts.get('weld-spark-0');
@@ -149,12 +149,12 @@ test('PAINT-301 booth preserves selection identity and animates the spray gantry
     child.selectionId === paint.selectionId
   ))).toBe(true);
   const paintBounds = boundsForEquipment(paint);
-  expect(paintBounds.min[0]).toBeCloseTo(-2.7);
+  expect(paintBounds.min[0]).toBeCloseTo(1.3);
   expect(paintBounds.min[1]).toBeCloseTo(0);
-  expect(paintBounds.min[2]).toBeCloseTo(-3.2);
-  expect(paintBounds.max[0]).toBeCloseTo(2.7);
+  expect(paintBounds.min[2]).toBeCloseTo(-6.2);
+  expect(paintBounds.max[0]).toBeCloseTo(6.7);
   expect(paintBounds.max[1]).toBeCloseTo(5.1);
-  expect(paintBounds.max[2]).toBeCloseTo(3.2);
+  expect(paintBounds.max[2]).toBeCloseTo(0.2);
 
   const gantry = visual.parts.get('gantry-rail');
   const mist = visual.parts.get('paint-mist-0');
@@ -180,12 +180,12 @@ test('OVEN-302 drying oven preserves selection identity and animates heat flow',
     child.selectionId === oven.selectionId
   ))).toBe(true);
   const ovenBounds = boundsForEquipment(oven);
-  expect(ovenBounds.min[0]).toBeCloseTo(3.6);
+  expect(ovenBounds.min[0]).toBeCloseTo(8.1);
   expect(ovenBounds.min[1]).toBeCloseTo(-0.3);
-  expect(ovenBounds.min[2]).toBeCloseTo(-3.05);
-  expect(ovenBounds.max[0]).toBeCloseTo(9.4);
+  expect(ovenBounds.min[2]).toBeCloseTo(-6.05);
+  expect(ovenBounds.max[0]).toBeCloseTo(13.9);
   expect(ovenBounds.max[1]).toBeCloseTo(6.15);
-  expect(ovenBounds.max[2]).toBeCloseTo(3.05);
+  expect(ovenBounds.max[2]).toBeCloseTo(0.05);
 
   const roller = visual.parts.get('roller-0');
   const heatGlow = visual.parts.get('heat-glow-0');
@@ -214,12 +214,12 @@ test('TRIM-401 assembly station preserves selection identity and animates instal
     child.selectionId === trim.selectionId
   ))).toBe(true);
   const trimBounds = boundsForEquipment(trim);
-  expect(trimBounds.min[0]).toBeCloseTo(9.95);
+  expect(trimBounds.min[0]).toBeCloseTo(20.95);
   expect(trimBounds.min[1]).toBeCloseTo(-0.65);
-  expect(trimBounds.min[2]).toBeCloseTo(-4.9);
-  expect(trimBounds.max[0]).toBeCloseTo(16.05);
+  expect(trimBounds.min[2]).toBeCloseTo(-7.9);
+  expect(trimBounds.max[0]).toBeCloseTo(27.05);
   expect(trimBounds.max[1]).toBeCloseTo(5.05);
-  expect(trimBounds.max[2]).toBeCloseTo(3.5);
+  expect(trimBounds.max[2]).toBeCloseTo(0.5);
 
   const lift = visual.parts.get('lift-frame');
   const arm = visual.parts.get('robot-arm-left-lower');
@@ -248,12 +248,12 @@ test('QA-501 inspection gate preserves selection identity and animates scanning'
     child.selectionId === quality.selectionId
   ))).toBe(true);
   const qualityBounds = boundsForEquipment(quality);
-  expect(qualityBounds.min[0]).toBeCloseTo(22.5);
+  expect(qualityBounds.min[0]).toBeCloseTo(0);
   expect(qualityBounds.min[1]).toBeCloseTo(-0.2);
-  expect(qualityBounds.min[2]).toBeCloseTo(-3.4);
-  expect(qualityBounds.max[0]).toBeCloseTo(26.5);
+  expect(qualityBounds.min[2]).toBeCloseTo(5.6);
+  expect(qualityBounds.max[0]).toBeCloseTo(4);
   expect(qualityBounds.max[1]).toBeCloseTo(4.3);
-  expect(qualityBounds.max[2]).toBeCloseTo(3.4);
+  expect(qualityBounds.max[2]).toBeCloseTo(12.4);
 
   const light = visual.parts.get('scan-light-0');
   const camera = visual.parts.get('vision-camera-near');
@@ -284,12 +284,12 @@ test('EOL-601 end-of-line test station preserves selection identity and animates
     child.selectionId === eol.selectionId
   ))).toBe(true);
   const eolBounds = boundsForEquipment(eol);
-  expect(eolBounds.min[0]).toBeCloseTo(27.4);
+  expect(eolBounds.min[0]).toBeCloseTo(-16.6);
   expect(eolBounds.min[1]).toBeCloseTo(-0.55);
-  expect(eolBounds.min[2]).toBeCloseTo(-2.9);
-  expect(eolBounds.max[0]).toBeCloseTo(32.6);
+  expect(eolBounds.min[2]).toBeCloseTo(6.1);
+  expect(eolBounds.max[0]).toBeCloseTo(-11.4);
   expect(eolBounds.max[1]).toBeCloseTo(4.15);
-  expect(eolBounds.max[2]).toBeCloseTo(2.9);
+  expect(eolBounds.max[2]).toBeCloseTo(11.9);
 
   const roller = visual.parts.get('roller-0');
   const arm = visual.parts.get('test-arm-left');
@@ -318,12 +318,12 @@ test('LOGI-701 finished vehicle dock preserves selection identity and animates d
     child.selectionId === logistics.selectionId
   ))).toBe(true);
   const logisticsBounds = boundsForEquipment(logistics);
-  expect(logisticsBounds.min[0]).toBeCloseTo(32.6);
+  expect(logisticsBounds.min[0]).toBeCloseTo(-33.4);
   expect(logisticsBounds.min[1]).toBeCloseTo(-0.45);
-  expect(logisticsBounds.min[2]).toBeCloseTo(-3.2);
-  expect(logisticsBounds.max[0]).toBeCloseTo(39.7);
+  expect(logisticsBounds.min[2]).toBeCloseTo(5.8);
+  expect(logisticsBounds.max[0]).toBeCloseTo(-26.3);
   expect(logisticsBounds.max[1]).toBeCloseTo(4.7);
-  expect(logisticsBounds.max[2]).toBeCloseTo(3.2);
+  expect(logisticsBounds.max[2]).toBeCloseTo(12.2);
 
   const roller = visual.parts.get('roller-0');
   const barrier = visual.parts.get('dock-barrier');
@@ -354,10 +354,10 @@ test('POWER-402 powertrain station preserves selection identity and animates ins
   const powertrainBounds = boundsForEquipment(powertrain);
   expect(powertrainBounds.min[0]).toBeCloseTo(16.2);
   expect(powertrainBounds.min[1]).toBeCloseTo(-0.45);
-  expect(powertrainBounds.min[2]).toBeCloseTo(-5.6);
+  expect(powertrainBounds.min[2]).toBeCloseTo(6.2);
   expect(powertrainBounds.max[0]).toBeCloseTo(20.8);
   expect(powertrainBounds.max[1]).toBeCloseTo(4.75);
-  expect(powertrainBounds.max[2]).toBeCloseTo(-0.7);
+  expect(powertrainBounds.max[2]).toBeCloseTo(11.1);
 
   const lift = visual.parts.get('lift-beam');
   const roller = visual.parts.get('roller-0');
@@ -386,12 +386,12 @@ test('GLASS-403 glass and door station preserves selection identity and animates
     child.selectionId === glass.selectionId
   ))).toBe(true);
   const glassBounds = boundsForEquipment(glass);
-  expect(glassBounds.min[0]).toBeCloseTo(16.6);
+  expect(glassBounds.min[0]).toBeCloseTo(8.1);
   expect(glassBounds.min[1]).toBeCloseTo(-0.4);
-  expect(glassBounds.min[2]).toBeCloseTo(0);
-  expect(glassBounds.max[0]).toBeCloseTo(21.5);
+  expect(glassBounds.min[2]).toBeCloseTo(6.2);
+  expect(glassBounds.max[0]).toBeCloseTo(13);
   expect(glassBounds.max[1]).toBeCloseTo(4.65);
-  expect(glassBounds.max[2]).toBeCloseTo(5.6);
+  expect(glassBounds.max[2]).toBeCloseTo(11.8);
 
   const arm = visual.parts.get('suction-arm-near');
   const cup = visual.parts.get('suction-cup-near');
@@ -420,12 +420,12 @@ test('ROBOT-201 standalone welding robot preserves selection identity and animat
     child.selectionId === robot.selectionId
   ))).toBe(true);
   const robotBounds = boundsForEquipment(robot);
-  expect(robotBounds.min[0]).toBeCloseTo(-9.25);
+  expect(robotBounds.min[0]).toBeCloseTo(-10.25);
   expect(robotBounds.min[1]).toBeCloseTo(1.8);
-  expect(robotBounds.min[2]).toBeCloseTo(-4.75);
-  expect(robotBounds.max[0]).toBeCloseTo(-6.45);
+  expect(robotBounds.min[2]).toBeCloseTo(-7.75);
+  expect(robotBounds.max[0]).toBeCloseTo(-7.45);
   expect(robotBounds.max[1]).toBeCloseTo(6.1);
-  expect(robotBounds.max[2]).toBeCloseTo(-2.25);
+  expect(robotBounds.max[2]).toBeCloseTo(-5.25);
 
   const arm = visual.parts.get('robot-arm-lower');
   const torch = visual.parts.get('weld-torch');
@@ -470,7 +470,7 @@ test('new production stations render structured animated parts', () => {
   }
 });
 
-test('production flow routes the vehicle through expanded station centers', () => {
+test('production flow routes the vehicle through the spatial station layout', () => {
   const route = productionStageRoute();
   const frame = route.find((stage) => stage.tag === 'FRAME-202');
   const prep = route.find((stage) => stage.tag === 'PREP-301');
@@ -483,10 +483,26 @@ test('production flow routes the vehicle through expanded station centers', () =
   ): void => {
     actual.forEach((value, index) => expect(value).toBeCloseTo(expected[index]!, 8));
   };
-  expectPosition(frame.startPosition, [-14, 0, 0]);
-  expectPosition(frame.endPosition, [-6.125, 0, -8.1]);
-  expectPosition(prep.startPosition, [-6.125, 0, -8.1]);
-  expectPosition(prep.endPosition, [0, 0, -8.1]);
-  expectPosition(chassis.startPosition, [22.75, 0, 0]);
-  expectPosition(chassis.endPosition, [24.5, 0, -8.1]);
+  expectPosition(frame.startPosition, [-9, 0, -10]);
+  expectPosition(frame.endPosition, [-3, 0, -10]);
+  expectPosition(prep.startPosition, [-3, 0, -10]);
+  expectPosition(prep.endPosition, [-3, 0, -3]);
+  expectPosition(chassis.startPosition, [24, 0, -3]);
+  expectPosition(chassis.endPosition, [24, 0, 5]);
+});
+
+test('canonical factory positions form separated process zones around the courtyard', () => {
+  const positions = new Map(FACTORY_EQUIPMENT.map((item) => [item.tag, item.position]));
+  const zLevels = new Set(FACTORY_EQUIPMENT.map((item) => item.position[2]));
+
+  expect(zLevels.size).toBeGreaterThanOrEqual(5);
+  expect(positions.get('WELD-201')).toEqual([-9, 1.45, -10]);
+  expect(positions.get('PAINT-301')).toEqual([4, 1.8, -3]);
+  expect(positions.get('QA-501')).toEqual([2, 1.9, 9]);
+  for (const [, position] of positions) {
+    expect(position[0]).toBeGreaterThanOrEqual(-30);
+    expect(position[0]).toBeLessThanOrEqual(24);
+    expect(position[2]).toBeGreaterThanOrEqual(-10);
+    expect(position[2]).toBeLessThanOrEqual(9);
+  }
 });

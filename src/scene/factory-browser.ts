@@ -39,23 +39,7 @@ import { moveCamera, type CameraPose } from './camera-controller.js';
 import { applyUserSelection } from './user-selection.js';
 import { selectionIdsWithRelated } from './relations.js';
 
-const FACTORY_LAYOUT_SCALE_X = 1.75;
-const FACTORY_LAYOUT_SCALE_Z = 1.35;
-
-function layoutX(value: number): number {
-  return value * FACTORY_LAYOUT_SCALE_X;
-}
-
-function layoutPosition(position: readonly [number, number, number]): readonly [number, number, number] {
-  return [layoutX(position[0]), position[1], position[2] * FACTORY_LAYOUT_SCALE_Z];
-}
-
-function expandedFactoryEquipment(item: FactoryEquipment): FactoryEquipment {
-  return {
-    ...item,
-    position: layoutPosition(item.position),
-  };
-}
+type LayoutPosition = readonly [number, number, number];
 
 interface BrowserSceneOptions {
   readonly stage: HTMLElement;
@@ -193,27 +177,71 @@ function mesh(
 }
 
 function addFactoryDecor(scene: ICEScene): void {
-  scene.addChild(mesh('factory-floor', [132, 0.2, 30], [layoutX(8), -0.7, 0], '#17272b', { edgeColor: '#3b6667' }));
-  scene.addChild(mesh('main-conveyor-bed', [120, 0.25, 3.4], [layoutX(8), -0.25, 0], '#2a3c42', { edgeColor: '#6f9695' }));
-  scene.addChild(mesh('conveyor-left-rail', [120, 0.45, 0.18], [layoutX(8), 0.05, -2.2], '#879b98', { edgeColor: '#d6eee1' }));
-  scene.addChild(mesh('conveyor-right-rail', [120, 0.45, 0.18], [layoutX(8), 0.05, 2.2], '#879b98', { edgeColor: '#d6eee1' }));
-  scene.addChild(mesh('side-process-bed', [120, 0.18, 3], [layoutX(8), -0.48, -8.1], '#20363d', { edgeColor: '#5e8583' }));
-  scene.addChild(mesh('side-process-rail-near', [120, 0.28, 0.16], [layoutX(8), -0.18, -6.5], '#728e8b', { edgeColor: '#c2e4d9' }));
-  scene.addChild(mesh('side-process-rail-far', [120, 0.28, 0.16], [layoutX(8), -0.18, -9.7], '#728e8b', { edgeColor: '#c2e4d9' }));
-  for (const x of [-16, -10, -4, 2, 8, 14, 20, 26, 32]) {
-    scene.addChild(mesh(`conveyor-support-${x}`, [0.25, 1.25, 4.2], [layoutX(x), -0.1, 0], '#314b51', { edgeColor: '#5f8585' }));
+  const floor = '#17272b';
+  const steel = '#314b51';
+  const steelEdge = '#6f9695';
+  const hazard = '#d7b84c';
+
+  scene.addChild(mesh('factory-floor', [82, 0.2, 42], [0, -0.7, 0], floor, { edgeColor: '#3b6667' }));
+  scene.addChild(mesh('courtyard-slab', [34, 0.08, 18], [0, -0.57, 2], '#2c4648', { edgeColor: '#5d8580' }));
+  scene.addChild(mesh('courtyard-shadow', [28, 0.04, 12], [0, -0.5, 2], '#1b3035', { edgeColor: '#365b5b' }));
+
+  // Low factory halls frame the route without turning the whole scene into a tunnel.
+  scene.addChild(mesh('press-hall-wall', [30, 4.4, 0.7], [-18, 1.55, -16.2], '#324c50', { edgeColor: '#6f928d' }));
+  scene.addChild(mesh('press-hall-roof', [31, 0.45, 4], [-18, 4.1, -14.8], '#405b5b', { edgeColor: '#88aaa0' }));
+  scene.addChild(mesh('paint-hall-wall', [32, 4.8, 0.7], [11, 1.75, -10.2], '#3d5556', { edgeColor: '#7c9c91' }));
+  scene.addChild(mesh('paint-hall-roof', [33, 0.45, 4], [11, 4.45, -8.8], '#53615b', { edgeColor: '#a1ae92' }));
+  scene.addChild(mesh('quality-hall-wall', [32, 4.2, 0.7], [-15, 1.45, 16.1], '#344853', { edgeColor: '#78929a' }));
+  scene.addChild(mesh('quality-hall-roof', [33, 0.45, 4], [-15, 3.95, 14.6], '#465866', { edgeColor: '#8fa9af' }));
+
+  // A stepped pipe bridge makes the central yard read as a real industrial district.
+  for (const [index, x] of [-12, -4, 4, 12, 20].entries()) {
+    scene.addChild(mesh(`pipe-bridge-column-${index}-near`, [0.45, 5.8, 0.45], [x, 2.25, -6.7], steel, { edgeColor: steelEdge }));
+    scene.addChild(mesh(`pipe-bridge-column-${index}-far`, [0.45, 5.8, 0.45], [x, 2.25, 6.7], steel, { edgeColor: steelEdge }));
+    scene.addChild(mesh(`pipe-bridge-beam-${index}`, [0.45, 0.45, 14], [x, 5.2, 0], '#3c5d60', { edgeColor: '#84ada5' }));
+    if (index < 4) {
+      scene.addChild(mesh(`pipe-run-${index}`, [7.2, 0.38, 0.38], [x + 3.6, 5.55, -6.7], '#6c7770', { edgeColor: '#c4c5a3' }));
+    }
   }
-  for (const x of [-19, -7, 5, 17, 29, 35]) {
-    scene.addChild(mesh(`roof-column-left-${x}`, [0.35, 8, 0.35], [layoutX(x), 3.3, -11], '#253e43', { edgeColor: '#557776' }));
-    scene.addChild(mesh(`roof-column-right-${x}`, [0.35, 8, 0.35], [layoutX(x), 3.3, 11], '#253e43', { edgeColor: '#557776' }));
-    scene.addChild(mesh(`roof-beam-${x}`, [0.35, 0.35, 22], [layoutX(x), 7.2, 0], '#345459', { edgeColor: '#77a5a0' }));
+
+  // Overhead cranes are separate landmarks for the body, paint, and inspection zones.
+  for (const [index, x] of [-22, -8, 8, 24].entries()) {
+    scene.addChild(mesh(`gantry-column-${index}-left`, [0.5, 7.2, 0.5], [x, 3.1, -13.2], '#293f45', { edgeColor: '#678a88' }));
+    scene.addChild(mesh(`gantry-column-${index}-right`, [0.5, 7.2, 0.5], [x, 3.1, -3.2], '#293f45', { edgeColor: '#678a88' }));
+    scene.addChild(mesh(`gantry-beam-${index}`, [0.5, 0.5, 10.5], [x, 6.55, -8.2], '#4b696c', { edgeColor: '#91b8ad' }));
+    scene.addChild(mesh(`gantry-trolley-${index}`, [1.1, 0.45, 0.8], [x, 6.05, -8.2], '#bf8144', { edgeColor: '#ffd38f' }));
   }
-  for (const x of [-14, 0, 14, 28]) {
-    scene.addChild(mesh(`vehicle-body-${x}`, [3.4, 0.8, 1.8], [layoutX(x), 0.45, 0], '#a9c0bd', { edgeColor: '#effff5' }));
-    scene.addChild(mesh(`vehicle-cabin-${x}`, [1.45, 0.65, 1.55], [layoutX(x - 0.25), 1.15, 0], '#436c73', { edgeColor: '#9fd5c8' }));
+
+  // Short floor tracks and hazard lanes make the route legible from the overview camera.
+  const lane = (id: string, size: readonly [number, number, number], position: LayoutPosition): void => {
+    scene.addChild(mesh(id, size, position, hazard, { edgeColor: '#ffe994' }));
+  };
+  lane('lane-west', [0.18, 0.04, 21], [-35.5, -0.56, 0]);
+  lane('lane-east', [0.18, 0.04, 21], [35.5, -0.56, 0]);
+  lane('lane-north', [68, 0.04, 0.18], [0, -0.56, 13.2]);
+  lane('lane-south', [68, 0.04, 0.18], [0, -0.56, -13.2]);
+  lane('yard-lane-left', [0.16, 0.04, 13], [-16.5, -0.5, 2]);
+  lane('yard-lane-right', [0.16, 0.04, 13], [16.5, -0.5, 2]);
+
+  // Inspection portal, finished-goods dock, and service blocks are intentionally asymmetrical.
+  scene.addChild(mesh('inspection-portal-left', [0.65, 6.2, 0.65], [0, 2.4, 6.2], '#6f638e', { edgeColor: '#c1b4ef' }));
+  scene.addChild(mesh('inspection-portal-right', [0.65, 6.2, 0.65], [0, 2.4, 11.8], '#6f638e', { edgeColor: '#c1b4ef' }));
+  scene.addChild(mesh('inspection-portal-top', [0.65, 0.65, 6.2], [0, 5.45, 9], '#806fa4', { edgeColor: '#d4c4ff' }));
+  scene.addChild(mesh('dock-platform', [13, 0.55, 5.2], [-30, -0.05, 9], '#355b57', { edgeColor: '#80b2a4' }));
+  scene.addChild(mesh('dock-canopy', [13, 0.35, 5.2], [-30, 5.2, 9], '#4b7770', { edgeColor: '#a2d4c3' }));
+  for (const [index, x] of [-34.5, -30, -25.5].entries()) {
+    scene.addChild(mesh(`dock-bay-${index}`, [0.18, 2.1, 4.6], [x, 1.0, 9], '#d7b84c', { edgeColor: '#ffe994' }));
   }
-  scene.addChild(mesh('safety-lane-left', [124, 0.04, 0.18], [layoutX(8), -0.56, -6.5], '#d7b84c', { edgeColor: '#ffe994' }));
-  scene.addChild(mesh('safety-lane-right', [124, 0.04, 0.18], [layoutX(8), -0.56, 6.5], '#d7b84c', { edgeColor: '#ffe994' }));
+
+  // Staged shells and logistics crates provide foreground scale without adding new business nodes.
+  for (const [index, x] of [-27, -19, -11, 19, 27].entries()) {
+    scene.addChild(mesh(`staged-body-${index}`, [3.4, 0.8, 1.8], [x, 0.45, 1.8], '#a9c0bd', { edgeColor: '#effff5' }));
+    scene.addChild(mesh(`staged-cabin-${index}`, [1.45, 0.65, 1.55], [x - 0.25, 1.15, 1.8], '#436c73', { edgeColor: '#9fd5c8' }));
+  }
+  for (const [index, x] of [-27, -21, 21, 27].entries()) {
+    scene.addChild(mesh(`logistics-pallet-${index}`, [2.8, 0.35, 2.2], [x, -0.28, -1.3], '#7b6045', { edgeColor: '#b9986f' }));
+    scene.addChild(mesh(`logistics-crate-${index}`, [2.2, 1.5, 1.7], [x, 0.65, -1.3], '#b17a43', { edgeColor: '#e2b778' }));
+  }
 }
 
 export function addBodyLoadingStation(
@@ -1206,7 +1234,7 @@ function addFactoryEquipment(
 ): readonly EquipmentRecord[] {
   const records: EquipmentRecord[] = [];
   for (const sourceItem of FACTORY_EQUIPMENT) {
-    const item = expandedFactoryEquipment(sourceItem);
+    const item = sourceItem;
     const record: EquipmentRecord = Object.freeze({
       selectionId: item.selectionId,
       name: item.name,
@@ -2056,7 +2084,7 @@ function createProductionVehicle(scene: ICEScene): ProductionVehicle {
     details,
   } satisfies ProductionVehicle;
   setProductionVisual(vehicle, 'material');
-  root.setLocalMatrix(translationMatrix(layoutX(-30)));
+  root.setLocalMatrix(translationMatrix(-38, 0, -10));
   scene.addChild(root);
   return vehicle;
 }
@@ -2064,13 +2092,13 @@ function createProductionVehicle(scene: ICEScene): ProductionVehicle {
 function productionPositionForTag(tag: string): readonly [number, number, number] {
   const sourceItem = FACTORY_EQUIPMENT.find((item) => item.tag === tag);
   if (!sourceItem) throw new Error(`Unknown production route tag: ${tag}`);
-  const position = layoutPosition(sourceItem.position);
+  const position = sourceItem.position;
   return [position[0], 0, position[2]];
 }
 
 export function productionStageRoute(): readonly ProductionStage[] {
-  const entryPosition: readonly [number, number, number] = [layoutX(-30), 0, 0];
-  const exitPosition: readonly [number, number, number] = [layoutX(41), 0, 0];
+  const entryPosition: readonly [number, number, number] = [-38, 0, -10];
+  const exitPosition: readonly [number, number, number] = [-38, 0, 9];
   const position = productionPositionForTag;
   return [
     {
@@ -2395,20 +2423,20 @@ export async function createFactorySceneController(
     near: 0.1,
     far: 1000,
     position: [38, 27, 40],
-    target: [8, 0, 0],
+    target: [0, 1, 0],
   });
   const overviewBounds: ICEGeometryBoundsLike = {
-    min: [-54, -1, -15],
-    max: [80, 8, 15],
+    min: [-40, -1, -18],
+    max: [40, 10, 18],
   };
   const overviewCenter = center(overviewBounds);
   const overviewRadius = radius(overviewBounds);
   const overview: CameraPose = {
     target: overviewCenter,
     position: [
-      overviewCenter[0] + overviewRadius * 0.82,
-      overviewCenter[1] + overviewRadius * 0.62,
-      overviewCenter[2] + overviewRadius * 0.95,
+      overviewCenter[0] + overviewRadius * 1.05,
+      overviewCenter[1] + overviewRadius * 0.9,
+      overviewCenter[2] + overviewRadius * 1.15,
     ],
   };
   camera.setPosition(overview.position).setTarget(overview.target);
