@@ -1,6 +1,6 @@
 import { expect } from '#test-expect';
 import { test } from 'node:test';
-import { ICEScene } from 'ice3';
+import { ICEBasicMaterial, ICEBoxGeometry, ICEMesh, ICEScene } from 'ice3';
 import { FACTORY_EQUIPMENT } from '../shared/factory.ts';
 import {
   addBodyLoadingStation,
@@ -43,6 +43,7 @@ import {
   createTrimAssemblyMotion,
   createWeldingRobotMotion,
   productionStageRoute,
+  updateFactoryAmbientVisual,
 } from '../src/scene/factory-browser.ts';
 
 test('BODY-101 visual parts preserve the equipment selection identity', () => {
@@ -505,4 +506,29 @@ test('canonical factory positions form separated process zones around the courty
     expect(position[2]).toBeGreaterThanOrEqual(-10);
     expect(position[2]).toBeLessThanOrEqual(9);
   }
+});
+
+test('factory ambient motion animates signals, cranes, utility caps, and inspection scan', () => {
+  const createFixture = (id: string): ICEMesh => new ICEMesh({
+    id,
+    position: [0, 1, 0],
+    geometry: new ICEBoxGeometry({ width: 1, height: 1, depth: 1 }),
+    material: new ICEBasicMaterial({ color: '#ffffff' }),
+  });
+  const signal = createFixture('ambient-signal');
+  const trolley = createFixture('ambient-trolley');
+  const cap = createFixture('ambient-cap');
+  const scan = createFixture('ambient-scan');
+
+  updateFactoryAmbientVisual({
+    signalLights: [signal],
+    craneTrolleys: [trolley],
+    utilityCaps: [cap],
+    inspectionScan: scan,
+  }, 0.7);
+
+  expect(signal.visible).toBe(true);
+  expect(trolley.toJSON().matrix).toBeDefined();
+  expect(cap.toJSON().matrix).toBeDefined();
+  expect(scan.toJSON().matrix).toBeDefined();
 });

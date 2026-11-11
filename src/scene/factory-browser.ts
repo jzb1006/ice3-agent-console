@@ -41,6 +41,13 @@ import { selectionIdsWithRelated } from './relations.js';
 
 type LayoutPosition = readonly [number, number, number];
 
+export interface FactoryAmbientVisual {
+  readonly signalLights: readonly ICEMesh[];
+  readonly craneTrolleys: readonly ICEMesh[];
+  readonly utilityCaps: readonly ICEMesh[];
+  readonly inspectionScan: ICEMesh;
+}
+
 interface BrowserSceneOptions {
   readonly stage: HTMLElement;
   readonly visibleViewport?: () => ScreenRect;
@@ -176,11 +183,14 @@ function mesh(
   });
 }
 
-function addFactoryDecor(scene: ICEScene): void {
+function addFactoryDecor(scene: ICEScene): FactoryAmbientVisual {
   const floor = '#17272b';
   const steel = '#314b51';
   const steelEdge = '#6f9695';
   const hazard = '#d7b84c';
+  const signalLights: ICEMesh[] = [];
+  const craneTrolleys: ICEMesh[] = [];
+  const utilityCaps: ICEMesh[] = [];
 
   scene.addChild(mesh('factory-floor', [82, 0.2, 42], [0, -0.7, 0], floor, { edgeColor: '#3b6667' }));
   scene.addChild(mesh('courtyard-slab', [34, 0.08, 18], [0, -0.57, 2], '#2c4648', { edgeColor: '#5d8580' }));
@@ -209,7 +219,9 @@ function addFactoryDecor(scene: ICEScene): void {
     scene.addChild(mesh(`gantry-column-${index}-left`, [0.5, 7.2, 0.5], [x, 3.1, -13.2], '#293f45', { edgeColor: '#678a88' }));
     scene.addChild(mesh(`gantry-column-${index}-right`, [0.5, 7.2, 0.5], [x, 3.1, -3.2], '#293f45', { edgeColor: '#678a88' }));
     scene.addChild(mesh(`gantry-beam-${index}`, [0.5, 0.5, 10.5], [x, 6.55, -8.2], '#4b696c', { edgeColor: '#91b8ad' }));
-    scene.addChild(mesh(`gantry-trolley-${index}`, [1.1, 0.45, 0.8], [x, 6.05, -8.2], '#bf8144', { edgeColor: '#ffd38f' }));
+    const trolley = mesh(`gantry-trolley-${index}`, [1.1, 0.45, 0.8], [x, 6.05, -8.2], '#bf8144', { edgeColor: '#ffd38f' });
+    craneTrolleys.push(trolley);
+    scene.addChild(trolley);
   }
 
   // Short floor tracks and hazard lanes make the route legible from the overview camera.
@@ -227,6 +239,8 @@ function addFactoryDecor(scene: ICEScene): void {
   scene.addChild(mesh('inspection-portal-left', [0.65, 6.2, 0.65], [0, 2.4, 6.2], '#6f638e', { edgeColor: '#c1b4ef' }));
   scene.addChild(mesh('inspection-portal-right', [0.65, 6.2, 0.65], [0, 2.4, 11.8], '#6f638e', { edgeColor: '#c1b4ef' }));
   scene.addChild(mesh('inspection-portal-top', [0.65, 0.65, 6.2], [0, 5.45, 9], '#806fa4', { edgeColor: '#d4c4ff' }));
+  const inspectionScan = mesh('inspection-scan-light', [0.18, 0.16, 5.2], [0, 4.9, 9], '#d7e4ff', { edgeColor: '#ffffff' });
+  scene.addChild(inspectionScan);
   scene.addChild(mesh('dock-platform', [13, 0.55, 5.2], [-30, -0.05, 9], '#355b57', { edgeColor: '#80b2a4' }));
   scene.addChild(mesh('dock-canopy', [13, 0.35, 5.2], [-30, 5.2, 9], '#4b7770', { edgeColor: '#a2d4c3' }));
   for (const [index, x] of [-34.5, -30, -25.5].entries()) {
@@ -254,7 +268,9 @@ function addFactoryDecor(scene: ICEScene): void {
     scene.addChild(mesh(`${id}-pylon-left`, [0.5, 4.6, 0.5], [x - 2.4, 1.7, z], '#3b555b', { edgeColor: '#8eb4ad' }));
     scene.addChild(mesh(`${id}-pylon-right`, [0.5, 4.6, 0.5], [x + 2.4, 1.7, z], '#3b555b', { edgeColor: '#8eb4ad' }));
     scene.addChild(mesh(`${id}-lintel`, [5.3, 0.5, 0.5], [x, 3.95, z], accent, { edgeColor: '#f5e5bb' }));
-    scene.addChild(mesh(`${id}-signal`, [0.55, 0.55, 0.55], [x, 3.35, z], accent, { edgeColor: '#fff4c7' }));
+    const signal = mesh(`${id}-signal`, [0.55, 0.55, 0.55], [x, 3.35, z], accent, { edgeColor: '#fff4c7' });
+    signalLights.push(signal);
+    scene.addChild(signal);
   };
   gateway('body-district-gateway', [-25, 0, -6.2], '#bd7440');
   gateway('paint-district-gateway', [11, 0, -6.2], '#4c9a91');
@@ -265,7 +281,9 @@ function addFactoryDecor(scene: ICEScene): void {
   scene.addChild(mesh('utility-plant-roof', [9.2, 0.45, 4.8], [31.5, 4.15, -14.4], '#58686b', { edgeColor: '#a5b6ab' }));
   for (const [index, x] of [29.3, 31.5, 33.7].entries()) {
     scene.addChild(mesh(`utility-stack-${index}`, [0.7, 7.2, 0.7], [x, 4.2, -17.1], '#67726e', { edgeColor: '#c0c3a5' }));
-    scene.addChild(mesh(`utility-stack-cap-${index}`, [1.1, 0.3, 1.1], [x, 7.85, -17.1], '#bb8148', { edgeColor: '#f1c27d' }));
+    const cap = mesh(`utility-stack-cap-${index}`, [1.1, 0.3, 1.1], [x, 7.85, -17.1], '#bb8148', { edgeColor: '#f1c27d' });
+    utilityCaps.push(cap);
+    scene.addChild(cap);
   }
   scene.addChild(mesh('utility-pipe-run', [16, 0.42, 0.42], [23, 5.45, -14.2], '#7b8171', { edgeColor: '#d0cc9d' }));
 
@@ -273,6 +291,7 @@ function addFactoryDecor(scene: ICEScene): void {
   scene.addChild(mesh('body-district-paving', [30, 0.04, 3.8], [-18, -0.51, -12.6], '#365259', { edgeColor: '#668b89' }));
   scene.addChild(mesh('paint-district-paving', [32, 0.04, 3.8], [11, -0.51, -5.6], '#3d5655', { edgeColor: '#76958c' }));
   scene.addChild(mesh('quality-district-paving', [34, 0.04, 3.8], [-14, -0.51, 12.6], '#3c4e5b', { edgeColor: '#7891a0' }));
+  return { signalLights, craneTrolleys, utilityCaps, inspectionScan };
 }
 
 export function addBodyLoadingStation(
@@ -1401,6 +1420,57 @@ function zRotationMatrix(
   ];
 }
 
+export function createFactoryAmbientMotion(
+  engine: ICE3,
+  visual: FactoryAmbientVisual,
+): { start(): void; dispose(): void } {
+  let frame: number | null = null;
+  let disposed = false;
+  const startedAt = performance.now();
+
+  const tick = (): void => {
+    if (disposed) return;
+    const elapsed = (performance.now() - startedAt) / 1_000;
+    updateFactoryAmbientVisual(visual, elapsed);
+    engine.requestRender('factory-ambient-animation');
+    frame = requestAnimationFrame(tick);
+  };
+
+  return {
+    start(): void {
+      if (frame === null && !disposed) tick();
+    },
+    dispose(): void {
+      disposed = true;
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = null;
+      visual.signalLights.forEach((signal) => { signal.visible = true; });
+      visual.craneTrolleys.forEach((trolley) => trolley.clearLocalMatrix());
+      visual.utilityCaps.forEach((cap) => cap.clearLocalMatrix());
+      visual.inspectionScan.clearLocalMatrix();
+    },
+  };
+}
+
+export function updateFactoryAmbientVisual(visual: FactoryAmbientVisual, elapsed: number): void {
+  visual.signalLights.forEach((signal, index) => {
+    signal.visible = Math.sin(elapsed * 2.6 + index * 1.7) > -0.35;
+  });
+  visual.craneTrolleys.forEach((trolley, index) => {
+    const base = trolley.position;
+    const travel = Math.sin(elapsed * 0.55 + index * 0.8) * 3.2;
+    trolley.setLocalMatrix(translationMatrix(base.x, base.y, base.z + travel));
+  });
+  visual.utilityCaps.forEach((cap, index) => {
+    const base = cap.position;
+    const lift = Math.abs(Math.sin(elapsed * 0.8 + index * 0.9)) * 0.22;
+    cap.setLocalMatrix(translationMatrix(base.x, base.y + lift, base.z));
+  });
+  const scanBase = visual.inspectionScan.position;
+  const scanOffset = Math.sin(elapsed * 1.4) * 1.8;
+  visual.inspectionScan.setLocalMatrix(translationMatrix(scanBase.x + scanOffset, scanBase.y, scanBase.z));
+}
+
 export interface FactoryStationVisual {
   readonly parts: ReadonlyMap<string, ICEMesh>;
 }
@@ -2440,7 +2510,7 @@ export async function createFactorySceneController(
   const engine = await new ICE3({ renderer: 'webgl2' }).initAsync(options.stage);
   engine.setBackgroundColor('#071317');
   const scene = new ICEScene({ id: 'automotive-factory-scene' });
-  addFactoryDecor(scene);
+  const ambientVisual = addFactoryDecor(scene);
   const stationVisuals = new Map<string, FactoryStationVisual>();
   const records = addFactoryEquipment(scene, stationVisuals);
   const productionVehicle = createProductionVehicle(scene);
@@ -2474,6 +2544,8 @@ export async function createFactorySceneController(
   let orbit = new ICEOrbitController(engine, camera).start();
   engine.setScene(scene).setCamera(camera);
   engine.start();
+  const ambientMotion = createFactoryAmbientMotion(engine, ambientVisual);
+  ambientMotion.start();
 
   let motion: AbortController | null = null;
   let selectionBlink: SelectionBlinkHandle | null = null;
@@ -2742,6 +2814,7 @@ export async function createFactorySceneController(
       stopSelectionBlink(false);
       productionAnimation.dispose();
       stationPreviewAnimation.dispose();
+      ambientMotion.dispose();
       motion?.abort();
       orbit.dispose();
       engine.destroy();
