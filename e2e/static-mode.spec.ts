@@ -77,11 +77,35 @@ test('runs a production scenario in the static build', async ({ page }) => {
     .toHaveText('场景已就绪', { timeout: 60_000 });
 
   await page.getByRole('button', { name: '涂装工艺', exact: true }).click();
+  const tour = page.locator('[data-role="tour-hud"]');
+  await expect(tour).toBeVisible({ timeout: 10_000 });
+  await expect(tour.locator('[data-role="tour-title"]'))
+    .toHaveText('涂装工艺');
+  await expect(tour.locator('[data-role="tour-step"]'))
+    .toHaveText(/^\d{2} \/ 05$/);
   await expect(page.locator('[data-role="selection-tag"]'))
     .toHaveText('PAINT-301', { timeout: 10_000 });
   await expect(page.locator('[data-role="selection-tag"]'))
     .toHaveText('TRIM-401', { timeout: 10_000 });
   expect(backendRequests).toEqual([]);
+});
+
+test('shows the production tour HUD while the vehicle moves through the line', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:8111/?demo=1&autoplay=0');
+  await expect(page.locator('[data-role="scene-status"]'))
+    .toHaveText('场景已就绪', { timeout: 60_000 });
+
+  await page.getByRole('button', { name: '整车生产流', exact: true }).click();
+  const tour = page.locator('[data-role="tour-hud"]');
+  await expect(tour).toBeVisible({ timeout: 10_000 });
+  await expect(tour.locator('[data-role="tour-title"]'))
+    .toHaveText('整车生产流');
+  await expect(tour.locator('[data-role="tour-step"]'))
+    .toHaveText(/^\d{2} \/ 19$/);
+  await expect(tour.locator('[data-role="tour-markers"] [data-role="tour-marker"]'))
+    .toHaveCount(19);
 });
 
 test('keeps the selected equipment highlighted during scenario playback', async ({

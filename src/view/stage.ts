@@ -1,7 +1,9 @@
 import { DEMO_ASSET } from '../../shared/demo-asset.js';
+import { TourOverlay } from './tour-overlay.js';
 
 export class StageView {
   readonly element: HTMLElement;
+  readonly tour: TourOverlay;
 
   constructor(host: HTMLElement, label: string = DEMO_ASSET.label) {
     this.element = host.ownerDocument.createElement('main');
@@ -18,6 +20,7 @@ export class StageView {
     this.element.querySelector<HTMLElement>('[data-role="scene-label"]')!
       .textContent = label;
     host.append(this.element);
+    this.tour = new TourOverlay(this.element);
   }
 
   setReady(): void {
