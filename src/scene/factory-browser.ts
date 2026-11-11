@@ -242,6 +242,37 @@ function addFactoryDecor(scene: ICEScene): void {
     scene.addChild(mesh(`logistics-pallet-${index}`, [2.8, 0.35, 2.2], [x, -0.28, -1.3], '#7b6045', { edgeColor: '#b9986f' }));
     scene.addChild(mesh(`logistics-crate-${index}`, [2.2, 1.5, 1.7], [x, 0.65, -1.3], '#b17a43', { edgeColor: '#e2b778' }));
   }
+
+  // V2 polish: color-coded gateways make the three process districts legible before
+  // the user selects an individual station.
+  const gateway = (
+    id: string,
+    position: LayoutPosition,
+    accent: string,
+  ): void => {
+    const [x, , z] = position;
+    scene.addChild(mesh(`${id}-pylon-left`, [0.5, 4.6, 0.5], [x - 2.4, 1.7, z], '#3b555b', { edgeColor: '#8eb4ad' }));
+    scene.addChild(mesh(`${id}-pylon-right`, [0.5, 4.6, 0.5], [x + 2.4, 1.7, z], '#3b555b', { edgeColor: '#8eb4ad' }));
+    scene.addChild(mesh(`${id}-lintel`, [5.3, 0.5, 0.5], [x, 3.95, z], accent, { edgeColor: '#f5e5bb' }));
+    scene.addChild(mesh(`${id}-signal`, [0.55, 0.55, 0.55], [x, 3.35, z], accent, { edgeColor: '#fff4c7' }));
+  };
+  gateway('body-district-gateway', [-25, 0, -6.2], '#bd7440');
+  gateway('paint-district-gateway', [11, 0, -6.2], '#4c9a91');
+  gateway('quality-district-gateway', [-14, 0, 13.2], '#7d6ca6');
+
+  // V2 polish: utility infrastructure gives the far edge of the yard a believable scale.
+  scene.addChild(mesh('utility-plant-block', [8.5, 4.6, 4.2], [31.5, 1.6, -14.4], '#3d5058', { edgeColor: '#78959b' }));
+  scene.addChild(mesh('utility-plant-roof', [9.2, 0.45, 4.8], [31.5, 4.15, -14.4], '#58686b', { edgeColor: '#a5b6ab' }));
+  for (const [index, x] of [29.3, 31.5, 33.7].entries()) {
+    scene.addChild(mesh(`utility-stack-${index}`, [0.7, 7.2, 0.7], [x, 4.2, -17.1], '#67726e', { edgeColor: '#c0c3a5' }));
+    scene.addChild(mesh(`utility-stack-cap-${index}`, [1.1, 0.3, 1.1], [x, 7.85, -17.1], '#bb8148', { edgeColor: '#f1c27d' }));
+  }
+  scene.addChild(mesh('utility-pipe-run', [16, 0.42, 0.42], [23, 5.45, -14.2], '#7b8171', { edgeColor: '#d0cc9d' }));
+
+  // Segmented paving breaks up the single floor plane and reinforces the traffic hierarchy.
+  scene.addChild(mesh('body-district-paving', [30, 0.04, 3.8], [-18, -0.51, -12.6], '#365259', { edgeColor: '#668b89' }));
+  scene.addChild(mesh('paint-district-paving', [32, 0.04, 3.8], [11, -0.51, -5.6], '#3d5655', { edgeColor: '#76958c' }));
+  scene.addChild(mesh('quality-district-paving', [34, 0.04, 3.8], [-14, -0.51, 12.6], '#3c4e5b', { edgeColor: '#7891a0' }));
 }
 
 export function addBodyLoadingStation(
