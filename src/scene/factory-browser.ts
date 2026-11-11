@@ -39,6 +39,24 @@ import { moveCamera, type CameraPose } from './camera-controller.js';
 import { applyUserSelection } from './user-selection.js';
 import { selectionIdsWithRelated } from './relations.js';
 
+const FACTORY_LAYOUT_SCALE_X = 1.75;
+const FACTORY_LAYOUT_SCALE_Z = 1.35;
+
+function layoutX(value: number): number {
+  return value * FACTORY_LAYOUT_SCALE_X;
+}
+
+function layoutPosition(position: readonly [number, number, number]): readonly [number, number, number] {
+  return [layoutX(position[0]), position[1], position[2] * FACTORY_LAYOUT_SCALE_Z];
+}
+
+function expandedFactoryEquipment(item: FactoryEquipment): FactoryEquipment {
+  return {
+    ...item,
+    position: layoutPosition(item.position),
+  };
+}
+
 interface BrowserSceneOptions {
   readonly stage: HTMLElement;
   readonly visibleViewport?: () => ScreenRect;
@@ -123,6 +141,19 @@ export function boundsForEquipment(item: FactoryEquipment): ICEGeometryBoundsLik
       max: [x + 2.5, y + 3.5, z + 2.8],
     };
   }
+  if (item.tag === 'PRESS-101' || item.tag === 'FRAME-202' || item.tag === 'PREP-301'
+    || item.tag === 'SEAL-304' || item.tag === 'CHASSIS-404' || item.tag === 'CAL-502') {
+    return {
+      min: [x - 2.5, y - 1.5, z - 2.4],
+      max: [x + 2.5, y + 2.9, z + 2.4],
+    };
+  }
+  if (item.tag === 'ROAD-602') {
+    return {
+      min: [x - 3.2, y - 1.1, z - 2.2],
+      max: [x + 3.2, y + 1.8, z + 2.2],
+    };
+  }
   const [width, height, depth] = item.size;
   return {
     min: [x - width / 2, y - height / 2, z - depth / 2],
@@ -162,27 +193,27 @@ function mesh(
 }
 
 function addFactoryDecor(scene: ICEScene): void {
-  scene.addChild(mesh('factory-floor', [70, 0.2, 24], [8, -0.7, 0], '#17272b', { edgeColor: '#3b6667' }));
-  scene.addChild(mesh('main-conveyor-bed', [62, 0.25, 3.4], [8, -0.25, 0], '#2a3c42', { edgeColor: '#6f9695' }));
-  scene.addChild(mesh('conveyor-left-rail', [62, 0.45, 0.18], [8, 0.05, -1.65], '#879b98', { edgeColor: '#d6eee1' }));
-  scene.addChild(mesh('conveyor-right-rail', [62, 0.45, 0.18], [8, 0.05, 1.65], '#879b98', { edgeColor: '#d6eee1' }));
-  scene.addChild(mesh('side-process-bed', [62, 0.18, 2.6], [8, -0.48, -6], '#20363d', { edgeColor: '#5e8583' }));
-  scene.addChild(mesh('side-process-rail-near', [62, 0.28, 0.16], [8, -0.18, -4.8], '#728e8b', { edgeColor: '#c2e4d9' }));
-  scene.addChild(mesh('side-process-rail-far', [62, 0.28, 0.16], [8, -0.18, -7.2], '#728e8b', { edgeColor: '#c2e4d9' }));
+  scene.addChild(mesh('factory-floor', [132, 0.2, 30], [layoutX(8), -0.7, 0], '#17272b', { edgeColor: '#3b6667' }));
+  scene.addChild(mesh('main-conveyor-bed', [120, 0.25, 3.4], [layoutX(8), -0.25, 0], '#2a3c42', { edgeColor: '#6f9695' }));
+  scene.addChild(mesh('conveyor-left-rail', [120, 0.45, 0.18], [layoutX(8), 0.05, -2.2], '#879b98', { edgeColor: '#d6eee1' }));
+  scene.addChild(mesh('conveyor-right-rail', [120, 0.45, 0.18], [layoutX(8), 0.05, 2.2], '#879b98', { edgeColor: '#d6eee1' }));
+  scene.addChild(mesh('side-process-bed', [120, 0.18, 3], [layoutX(8), -0.48, -8.1], '#20363d', { edgeColor: '#5e8583' }));
+  scene.addChild(mesh('side-process-rail-near', [120, 0.28, 0.16], [layoutX(8), -0.18, -6.5], '#728e8b', { edgeColor: '#c2e4d9' }));
+  scene.addChild(mesh('side-process-rail-far', [120, 0.28, 0.16], [layoutX(8), -0.18, -9.7], '#728e8b', { edgeColor: '#c2e4d9' }));
   for (const x of [-16, -10, -4, 2, 8, 14, 20, 26, 32]) {
-    scene.addChild(mesh(`conveyor-support-${x}`, [0.25, 1.25, 3.2], [x, -0.1, 0], '#314b51', { edgeColor: '#5f8585' }));
+    scene.addChild(mesh(`conveyor-support-${x}`, [0.25, 1.25, 4.2], [layoutX(x), -0.1, 0], '#314b51', { edgeColor: '#5f8585' }));
   }
   for (const x of [-19, -7, 5, 17, 29, 35]) {
-    scene.addChild(mesh(`roof-column-left-${x}`, [0.35, 8, 0.35], [x, 3.3, -9], '#253e43', { edgeColor: '#557776' }));
-    scene.addChild(mesh(`roof-column-right-${x}`, [0.35, 8, 0.35], [x, 3.3, 9], '#253e43', { edgeColor: '#557776' }));
-    scene.addChild(mesh(`roof-beam-${x}`, [0.35, 0.35, 18], [x, 7.2, 0], '#345459', { edgeColor: '#77a5a0' }));
+    scene.addChild(mesh(`roof-column-left-${x}`, [0.35, 8, 0.35], [layoutX(x), 3.3, -11], '#253e43', { edgeColor: '#557776' }));
+    scene.addChild(mesh(`roof-column-right-${x}`, [0.35, 8, 0.35], [layoutX(x), 3.3, 11], '#253e43', { edgeColor: '#557776' }));
+    scene.addChild(mesh(`roof-beam-${x}`, [0.35, 0.35, 22], [layoutX(x), 7.2, 0], '#345459', { edgeColor: '#77a5a0' }));
   }
   for (const x of [-14, 0, 14, 28]) {
-    scene.addChild(mesh(`vehicle-body-${x}`, [3.4, 0.8, 1.8], [x, 0.45, 0], '#a9c0bd', { edgeColor: '#effff5' }));
-    scene.addChild(mesh(`vehicle-cabin-${x}`, [1.45, 0.65, 1.55], [x - 0.25, 1.15, 0], '#436c73', { edgeColor: '#9fd5c8' }));
+    scene.addChild(mesh(`vehicle-body-${x}`, [3.4, 0.8, 1.8], [layoutX(x), 0.45, 0], '#a9c0bd', { edgeColor: '#effff5' }));
+    scene.addChild(mesh(`vehicle-cabin-${x}`, [1.45, 0.65, 1.55], [layoutX(x - 0.25), 1.15, 0], '#436c73', { edgeColor: '#9fd5c8' }));
   }
-  scene.addChild(mesh('safety-lane-left', [62, 0.04, 0.18], [8, -0.56, -5.2], '#d7b84c', { edgeColor: '#ffe994' }));
-  scene.addChild(mesh('safety-lane-right', [62, 0.04, 0.18], [8, -0.56, 5.2], '#d7b84c', { edgeColor: '#ffe994' }));
+  scene.addChild(mesh('safety-lane-left', [124, 0.04, 0.18], [layoutX(8), -0.56, -6.5], '#d7b84c', { edgeColor: '#ffe994' }));
+  scene.addChild(mesh('safety-lane-right', [124, 0.04, 0.18], [layoutX(8), -0.56, 6.5], '#d7b84c', { edgeColor: '#ffe994' }));
 }
 
 export function addBodyLoadingStation(
@@ -907,12 +938,275 @@ export function addGlassDoorInstallStation(
   return { parts };
 }
 
+type ProcessStationKind =
+  | 'press'
+  | 'frame'
+  | 'prep'
+  | 'seal'
+  | 'chassis'
+  | 'calibration'
+  | 'road-test';
+
+function addProcessStation(
+  scene: ICEScene,
+  item: FactoryEquipment,
+  kind: ProcessStationKind,
+): FactoryStationVisual {
+  const [x, y, z] = item.position;
+  const parts = new Map<string, ICEMesh>();
+  const part = (
+    suffix: string,
+    size: readonly [number, number, number],
+    offset: readonly [number, number, number],
+    color: string,
+    edgeColor = '#cfe7df',
+  ): void => {
+    const visualPart = mesh(
+      `equipment-${item.tag}-${suffix}`,
+      size,
+      [x + offset[0], y + offset[1], z + offset[2]],
+      color,
+      { selectionId: item.selectionId, edgeColor },
+    );
+    parts.set(suffix, visualPart);
+    scene.addChild(visualPart);
+  };
+
+  part('floor', [4.6, 0.2, 4], [0, -1.2, 0], '#263d43', '#739692');
+  if (kind === 'press') {
+    part('press-bed', [3.3, 0.3, 2.8], [0, -0.5, 0], '#708a88');
+    part('press-frame', [0.28, 2.7, 0.28], [-1.55, 0.65, 0], '#617d82');
+    part('press-frame-right', [0.28, 2.7, 0.28], [1.55, 0.65, 0], '#617d82');
+    part('press-beam', [3.4, 0.24, 0.28], [0, 1.95, 0], '#d0a744', '#ffeb9c');
+    part('press-die', [1.8, 0.5, 1.7], [0, 1.05, 0], '#879d9a');
+    part('press-feed', [2.8, 0.16, 0.9], [-0.4, 0.08, 0], '#a9c0bd');
+    part('process-flash-0', [0.2, 0.2, 0.2], [-0.75, 0.7, -1.15], '#f0c64b', '#fff1a1');
+    part('process-flash-1', [0.2, 0.2, 0.2], [0.75, 0.7, 1.15], '#77d2c0', '#d3fff1');
+  } else if (kind === 'frame') {
+    part('frame-platform', [3.6, 0.18, 3], [0, -0.48, 0], '#718886');
+    part('frame-gantry', [3.4, 0.22, 0.22], [0, 2, 0], '#7e9691');
+    part('frame-clamp-left', [0.25, 1.2, 0.25], [-1.15, 0.65, -0.95], '#d0a744', '#ffeb9c');
+    part('frame-clamp-right', [0.25, 1.2, 0.25], [1.15, 0.65, 0.95], '#d0a744', '#ffeb9c');
+    part('frame-arm-left', [0.22, 1.1, 0.22], [-1.1, 1.1, 0], '#c48149', '#ffdbb3');
+    part('frame-arm-right', [0.22, 1.1, 0.22], [1.1, 1.1, 0], '#c48149', '#ffdbb3');
+    part('frame-shell', [2.4, 0.9, 1.6], [0, 0.2, 0], '#536f79', '#c6e9df');
+    for (const suffix of ['0', '1']) {
+      part(`process-flash-${suffix}`, [0.18, 0.18, 0.18], [suffix === '0' ? -1 : 1, 0.9, suffix === '0' ? -1.2 : 1.2], '#f0c64b', '#fff1a1');
+    }
+  } else if (kind === 'prep') {
+    for (const [index, offsetX] of [-1.35, 0, 1.35].entries()) {
+      part(`prep-tank-${index}`, [1.1, 1.1, 2.7], [offsetX, -0.05, 0], '#3f7778', '#b4e0d5');
+      part(`prep-bubble-${index}`, [0.18, 0.18, 0.18], [offsetX, 0.75, 0], '#7ed8c5', '#d7fff3');
+    }
+    for (let index = 0; index < 3; index += 1) {
+      part(`prep-roller-${index}`, [0.18, 0.16, 2.5], [-1.35 + index * 1.35, 1.1, 0], '#c7d6cf', '#f2fff7');
+    }
+    part('prep-pump', [0.65, 0.65, 0.65], [1.9, 0.45, 1.1], '#718886');
+  } else if (kind === 'seal') {
+    part('seal-platform', [3.5, 0.18, 3], [0, -0.48, 0], '#718886');
+    part('seal-body', [2.8, 0.8, 1.7], [0, 0.1, 0], '#536f79');
+    part('seal-rail', [3.2, 0.2, 0.2], [0, 2.1, -1.25], '#7e9691');
+    part('seal-arm', [0.2, 1.25, 0.2], [-0.6, 1.3, -1.25], '#c48149', '#ffdbb3');
+    part('seal-nozzle', [0.34, 0.34, 0.34], [-0.6, 0.55, -1.25], '#d2a242', '#ffeb9b');
+    for (const [index, offsetX] of [-0.95, 0, 0.95].entries()) {
+      part(`seal-bead-${index}`, [0.18, 0.12, 1.4], [offsetX, 0.62, 0], '#d4a14c', '#ffe5a4');
+    }
+  } else if (kind === 'chassis') {
+    part('chassis-platform', [3.7, 0.18, 3], [0, -0.48, 0], '#718886');
+    part('chassis-body', [2.5, 0.75, 1.7], [0, 0.1, 0], '#536f79');
+    part('chassis-lift', [2.6, 0.24, 2.2], [0, 1.3, 0], '#d0a744', '#ffeb9c');
+    for (const [index, offset] of [[-1, -0.9], [-1, 0.9], [1, -0.9], [1, 0.9]] as const) {
+      part(`chassis-wheel-${index === -1 ? (offset < 0 ? '0' : '1') : (offset < 0 ? '2' : '3')}`, [0.35, 0.75, 0.75], [index * 1.2, 0.42, offset], '#303e47', '#aec8bf');
+    }
+    part('chassis-tool-left', [0.3, 0.3, 0.3], [-1.35, 0.55, -1.15], '#78a39b', '#d6fff1');
+    part('chassis-tool-right', [0.3, 0.3, 0.3], [1.35, 0.55, 1.15], '#78a39b', '#d6fff1');
+    part('process-flash-0', [0.18, 0.18, 0.18], [-1.35, 0.38, -1.15], '#f0c64b', '#fff1a1');
+    part('process-flash-1', [0.18, 0.18, 0.18], [1.35, 0.38, 1.15], '#77d2c0', '#d3fff1');
+  } else if (kind === 'calibration') {
+    part('cal-platform', [3.4, 0.18, 3], [0, -0.48, 0], '#718886');
+    part('cal-gate-left', [0.24, 2.7, 0.24], [-1.45, 0.7, 0], '#647e81');
+    part('cal-gate-right', [0.24, 2.7, 0.24], [1.45, 0.7, 0], '#647e81');
+    part('cal-gate-beam', [3.1, 0.22, 0.22], [0, 2.05, 0], '#7e9691');
+    part('cal-camera-left', [0.32, 0.5, 0.32], [-1.1, 1.25, -1.05], '#536f79');
+    part('cal-camera-right', [0.32, 0.5, 0.32], [1.1, 1.25, 1.05], '#536f79');
+    part('cal-target-0', [0.18, 1.2, 1.2], [-0.75, 0.35, 0], '#c6d9d1');
+    part('cal-target-1', [0.18, 1.2, 1.2], [0.75, 0.35, 0], '#c6d9d1');
+    part('cal-beam', [0.12, 0.12, 2.8], [0, 1.2, 0], '#6ee0c3', '#d1fff0');
+    part('process-flash-0', [0.18, 0.18, 0.18], [-1.45, 0.85, -1.25], '#f0c64b', '#fff1a1');
+  } else {
+    part('road-surface', [5.2, 0.12, 3.2], [0, -0.5, 0], '#344e55', '#8aa6a0');
+    for (let index = 0; index < 5; index += 1) {
+      part(`road-roller-${index}`, [0.22, 0.18, 2.7], [-1.8 + index * 0.9, -0.18, 0], '#c7d6cf', '#f2fff7');
+    }
+    for (let index = 0; index < 4; index += 1) {
+      part(`road-marker-${index}`, [0.5, 0.06, 0.14], [-1.5 + index, -0.28, -1.15], '#d8bc52', '#fff0a0');
+    }
+    part('road-sensor', [0.22, 1.3, 0.22], [1.8, 0.35, -1.15], '#647e81');
+    part('process-flash-0', [0.18, 0.18, 0.18], [1.8, 1.15, -1.15], '#f0c64b', '#fff1a1');
+  }
+  part('status-pole', [0.12, 0.95, 0.12], [2.05, 1.05, 2.1], '#6d8784', '#c4e6da');
+  part('status-red', [0.26, 0.18, 0.26], [2.05, 1.58, 2.1], '#bf4e4a', '#ffaaa0');
+  part('status-yellow', [0.26, 0.18, 0.26], [2.05, 1.34, 2.1], '#d5a83e', '#ffe99a');
+  part('status-green', [0.26, 0.18, 0.26], [2.05, 1.1, 2.1], '#54b58b', '#b1f5d1');
+  for (const [name, visualPart] of parts) {
+    if (name.startsWith('process-flash-') || name.startsWith('prep-bubble-')) visualPart.visible = false;
+  }
+  return { parts };
+}
+
+export const addPressStation = (scene: ICEScene, item: FactoryEquipment): FactoryStationVisual => addProcessStation(scene, item, 'press');
+export const addFrameAssemblyStation = (scene: ICEScene, item: FactoryEquipment): FactoryStationVisual => addProcessStation(scene, item, 'frame');
+export const addPretreatmentStation = (scene: ICEScene, item: FactoryEquipment): FactoryStationVisual => addProcessStation(scene, item, 'prep');
+export const addSealStation = (scene: ICEScene, item: FactoryEquipment): FactoryStationVisual => addProcessStation(scene, item, 'seal');
+export const addChassisStation = (scene: ICEScene, item: FactoryEquipment): FactoryStationVisual => addProcessStation(scene, item, 'chassis');
+export const addCalibrationStation = (scene: ICEScene, item: FactoryEquipment): FactoryStationVisual => addProcessStation(scene, item, 'calibration');
+export const addRoadTestStation = (scene: ICEScene, item: FactoryEquipment): FactoryStationVisual => addProcessStation(scene, item, 'road-test');
+
+function createProcessStationMotion(
+  visual: FactoryStationVisual | undefined,
+  kind: ProcessStationKind,
+): FactoryStationMotion {
+  const parts = visual?.parts;
+  const reset = (): void => {
+    for (const part of parts?.values() ?? []) part.clearLocalMatrix();
+    for (const [name, part] of parts ?? []) {
+      if (name.startsWith('process-flash-') || name.startsWith('prep-bubble-')) part.visible = false;
+    }
+    const green = parts?.get('status-green');
+    const yellow = parts?.get('status-yellow');
+    if (green) green.visible = true;
+    if (yellow) yellow.visible = true;
+  };
+  return {
+    update(progress: number): void {
+      if (!parts) return;
+      const wave = Math.sin(progress * Math.PI * 2);
+      const spin = progress * Math.PI * 10;
+      if (kind === 'press') {
+        const die = parts.get('press-die');
+        if (die) {
+          const base = die.position;
+          die.setLocalMatrix(translationMatrix(base.x, base.y + Math.abs(wave) * 0.45, base.z));
+        }
+        const feed = parts.get('press-feed');
+        if (feed) {
+          const base = feed.position;
+          feed.setLocalMatrix(translationMatrix(base.x + wave * 0.35, base.y, base.z));
+        }
+      } else if (kind === 'frame') {
+        for (const suffix of ['left', 'right']) {
+          const arm = parts.get(`frame-arm-${suffix}`);
+          if (!arm) continue;
+          const base = arm.position;
+          arm.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], wave * (suffix === 'left' ? 0.3 : -0.3)));
+        }
+        for (const suffix of ['left', 'right']) {
+          const clamp = parts.get(`frame-clamp-${suffix}`);
+          if (!clamp) continue;
+          const base = clamp.position;
+          clamp.setLocalMatrix(translationMatrix(base.x, base.y + Math.abs(wave) * 0.12, base.z));
+        }
+      } else if (kind === 'prep') {
+        for (let index = 0; index < 3; index += 1) {
+          const roller = parts.get(`prep-roller-${index}`);
+          if (roller) {
+            const base = roller.position;
+            roller.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], spin));
+          }
+          const bubble = parts.get(`prep-bubble-${index}`);
+          if (bubble) {
+            const base = bubble.position;
+            bubble.visible = Math.sin(progress * Math.PI * 12 + index) > -0.3;
+            bubble.setLocalMatrix(translationMatrix(base.x, base.y + Math.abs(wave) * 0.2, base.z));
+          }
+        }
+        const pump = parts.get('prep-pump');
+        if (pump) {
+          const base = pump.position;
+          pump.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], spin));
+        }
+      } else if (kind === 'seal') {
+        const arm = parts.get('seal-arm');
+        if (arm) {
+          const base = arm.position;
+          arm.setLocalMatrix(translationMatrix(base.x + wave * 0.45, base.y, base.z));
+        }
+        const nozzle = parts.get('seal-nozzle');
+        if (nozzle) {
+          const base = nozzle.position;
+          nozzle.setLocalMatrix(translationMatrix(base.x + wave * 0.45, base.y, base.z));
+        }
+        for (let index = 0; index < 3; index += 1) {
+          const bead = parts.get(`seal-bead-${index}`);
+          if (bead) bead.visible = Math.sin(progress * Math.PI * 10 + index) > -0.2;
+        }
+      } else if (kind === 'chassis') {
+        const lift = parts.get('chassis-lift');
+        if (lift) {
+          const base = lift.position;
+          lift.setLocalMatrix(translationMatrix(base.x, base.y + Math.abs(wave) * 0.35, base.z));
+        }
+        for (let index = 0; index < 4; index += 1) {
+          const wheel = parts.get(`chassis-wheel-${index}`);
+          if (wheel) {
+            const base = wheel.position;
+            wheel.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], spin));
+          }
+        }
+      } else if (kind === 'calibration') {
+        for (const suffix of ['left', 'right']) {
+          const camera = parts.get(`cal-camera-${suffix}`);
+          if (!camera) continue;
+          const base = camera.position;
+          camera.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], wave * (suffix === 'left' ? 0.25 : -0.25)));
+        }
+        const beam = parts.get('cal-beam');
+        if (beam) {
+          const base = beam.position;
+          beam.setLocalMatrix(translationMatrix(base.x + wave * 1.1, base.y, base.z));
+        }
+      } else {
+        for (let index = 0; index < 5; index += 1) {
+          const roller = parts.get(`road-roller-${index}`);
+          if (roller) {
+            const base = roller.position;
+            roller.setLocalMatrix(zRotationMatrix([base.x, base.y, base.z], spin));
+          }
+        }
+        const sensor = parts.get('road-sensor');
+        if (sensor) {
+          const base = sensor.position;
+          sensor.setLocalMatrix(translationMatrix(base.x, base.y + Math.abs(wave) * 0.2, base.z));
+        }
+      }
+      const active = Math.sin(progress * Math.PI * 12) > -0.15;
+      for (const [name, part] of parts) {
+        if (name.startsWith('process-flash-')) part.visible = active;
+      }
+      const green = parts.get('status-green');
+      const yellow = parts.get('status-yellow');
+      if (green) green.visible = Math.sin(progress * Math.PI * 4) >= 0;
+      if (yellow) yellow.visible = !green?.visible;
+    },
+    reset,
+  };
+}
+
+export const createPressStationMotion = (visual: FactoryStationVisual | undefined): FactoryStationMotion => createProcessStationMotion(visual, 'press');
+export const createFrameAssemblyMotion = (visual: FactoryStationVisual | undefined): FactoryStationMotion => createProcessStationMotion(visual, 'frame');
+export const createPretreatmentMotion = (visual: FactoryStationVisual | undefined): FactoryStationMotion => createProcessStationMotion(visual, 'prep');
+export const createSealStationMotion = (visual: FactoryStationVisual | undefined): FactoryStationMotion => createProcessStationMotion(visual, 'seal');
+export const createChassisStationMotion = (visual: FactoryStationVisual | undefined): FactoryStationMotion => createProcessStationMotion(visual, 'chassis');
+export const createCalibrationStationMotion = (visual: FactoryStationVisual | undefined): FactoryStationMotion => createProcessStationMotion(visual, 'calibration');
+export const createRoadTestStationMotion = (visual: FactoryStationVisual | undefined): FactoryStationMotion => createProcessStationMotion(visual, 'road-test');
+
 function addFactoryEquipment(
   scene: ICEScene,
   stationVisuals: Map<string, FactoryStationVisual>,
 ): readonly EquipmentRecord[] {
   const records: EquipmentRecord[] = [];
-  for (const item of FACTORY_EQUIPMENT) {
+  for (const sourceItem of FACTORY_EQUIPMENT) {
+    const item = expandedFactoryEquipment(sourceItem);
     const record: EquipmentRecord = Object.freeze({
       selectionId: item.selectionId,
       name: item.name,
@@ -925,7 +1219,9 @@ function addFactoryEquipment(
       }),
     });
     records.push(record);
-    if (item.tag === 'BODY-101') {
+    if (item.tag === 'PRESS-101') {
+      stationVisuals.set(item.tag, addPressStation(scene, item));
+    } else if (item.tag === 'BODY-101') {
       stationVisuals.set(item.tag, addBodyLoadingStation(scene, item));
       scene.addChild(mesh(
         `equipment-${item.tag}`,
@@ -945,16 +1241,28 @@ function addFactoryEquipment(
       stationVisuals.set(item.tag, addWeldingRobotStation(scene, item));
     } else if (item.tag === 'ROBOT-201') {
       stationVisuals.set(item.tag, addStandaloneWeldingRobotStation(scene, item));
+    } else if (item.tag === 'FRAME-202') {
+      stationVisuals.set(item.tag, addFrameAssemblyStation(scene, item));
     } else if (item.tag === 'PAINT-301') {
       stationVisuals.set(item.tag, addPaintBoothStation(scene, item));
+    } else if (item.tag === 'PREP-301') {
+      stationVisuals.set(item.tag, addPretreatmentStation(scene, item));
     } else if (item.tag === 'OVEN-302') {
       stationVisuals.set(item.tag, addDryingOvenStation(scene, item));
+    } else if (item.tag === 'SEAL-304') {
+      stationVisuals.set(item.tag, addSealStation(scene, item));
     } else if (item.tag === 'TRIM-401') {
       stationVisuals.set(item.tag, addTrimAssemblyStation(scene, item));
+    } else if (item.tag === 'CHASSIS-404') {
+      stationVisuals.set(item.tag, addChassisStation(scene, item));
     } else if (item.tag === 'QA-501') {
       stationVisuals.set(item.tag, addQualityInspectionStation(scene, item));
+    } else if (item.tag === 'CAL-502') {
+      stationVisuals.set(item.tag, addCalibrationStation(scene, item));
     } else if (item.tag === 'EOL-601') {
       stationVisuals.set(item.tag, addEndOfLineTestStation(scene, item));
+    } else if (item.tag === 'ROAD-602') {
+      stationVisuals.set(item.tag, addRoadTestStation(scene, item));
     } else if (item.tag === 'LOGI-701') {
       stationVisuals.set(item.tag, addFinishedVehicleDockStation(scene, item));
     } else if (item.tag === 'POWER-402') {
@@ -983,8 +1291,8 @@ type ProductionVisual = 'material' | 'body' | 'paint' | 'assembly' | 'complete';
 
 interface ProductionStage {
   readonly tag?: string;
-  readonly startX: number;
-  readonly endX: number;
+  readonly startPosition: readonly [number, number, number];
+  readonly endPosition: readonly [number, number, number];
   readonly durationMs: number;
   readonly holdMs: number;
   readonly visual: ProductionVisual;
@@ -1748,9 +2056,49 @@ function createProductionVehicle(scene: ICEScene): ProductionVehicle {
     details,
   } satisfies ProductionVehicle;
   setProductionVisual(vehicle, 'material');
-  root.setLocalMatrix(translationMatrix(-30));
+  root.setLocalMatrix(translationMatrix(layoutX(-30)));
   scene.addChild(root);
   return vehicle;
+}
+
+function productionPositionForTag(tag: string): readonly [number, number, number] {
+  const sourceItem = FACTORY_EQUIPMENT.find((item) => item.tag === tag);
+  if (!sourceItem) throw new Error(`Unknown production route tag: ${tag}`);
+  const position = layoutPosition(sourceItem.position);
+  return [position[0], 0, position[2]];
+}
+
+export function productionStageRoute(): readonly ProductionStage[] {
+  const entryPosition: readonly [number, number, number] = [layoutX(-30), 0, 0];
+  const exitPosition: readonly [number, number, number] = [layoutX(41), 0, 0];
+  const position = productionPositionForTag;
+  return [
+    {
+      startPosition: entryPosition,
+      endPosition: position('PRESS-101'),
+      durationMs: 1_000,
+      holdMs: 850,
+      visual: 'material',
+    },
+    { tag: 'PRESS-101', startPosition: position('PRESS-101'), endPosition: position('PRESS-101'), durationMs: 1, holdMs: 750, visual: 'material' },
+    { tag: 'BODY-101', startPosition: position('PRESS-101'), endPosition: position('BODY-101'), durationMs: 1_050, holdMs: 1_100, visual: 'body' },
+    { tag: 'CONV-101', startPosition: position('BODY-101'), endPosition: position('CONV-101'), durationMs: 1_050, holdMs: 1_100, visual: 'body' },
+    { tag: 'WELD-201', startPosition: position('CONV-101'), endPosition: position('WELD-201'), durationMs: 950, holdMs: 850, visual: 'body' },
+    { tag: 'FRAME-202', startPosition: position('WELD-201'), endPosition: position('FRAME-202'), durationMs: 900, holdMs: 800, visual: 'body' },
+    { tag: 'PREP-301', startPosition: position('FRAME-202'), endPosition: position('PREP-301'), durationMs: 850, holdMs: 750, visual: 'body' },
+    { tag: 'PAINT-301', startPosition: position('PREP-301'), endPosition: position('PAINT-301'), durationMs: 1_000, holdMs: 900, visual: 'paint' },
+    { tag: 'SEAL-304', startPosition: position('PAINT-301'), endPosition: position('SEAL-304'), durationMs: 850, holdMs: 800, visual: 'paint' },
+    { tag: 'OVEN-302', startPosition: position('SEAL-304'), endPosition: position('OVEN-302'), durationMs: 950, holdMs: 850, visual: 'paint' },
+    { tag: 'TRIM-401', startPosition: position('OVEN-302'), endPosition: position('TRIM-401'), durationMs: 1_000, holdMs: 950, visual: 'assembly' },
+    { tag: 'CHASSIS-404', startPosition: position('TRIM-401'), endPosition: position('CHASSIS-404'), durationMs: 900, holdMs: 850, visual: 'assembly' },
+    { tag: 'POWER-402', startPosition: position('CHASSIS-404'), endPosition: position('POWER-402'), durationMs: 900, holdMs: 850, visual: 'assembly' },
+    { tag: 'GLASS-403', startPosition: position('POWER-402'), endPosition: position('GLASS-403'), durationMs: 950, holdMs: 850, visual: 'assembly' },
+    { tag: 'QA-501', startPosition: position('GLASS-403'), endPosition: position('QA-501'), durationMs: 1_000, holdMs: 900, visual: 'complete' },
+    { tag: 'CAL-502', startPosition: position('QA-501'), endPosition: position('CAL-502'), durationMs: 850, holdMs: 750, visual: 'complete' },
+    { tag: 'EOL-601', startPosition: position('CAL-502'), endPosition: position('EOL-601'), durationMs: 950, holdMs: 850, visual: 'complete' },
+    { tag: 'ROAD-602', startPosition: position('EOL-601'), endPosition: position('ROAD-602'), durationMs: 1_000, holdMs: 950, visual: 'complete' },
+    { tag: 'LOGI-701', startPosition: position('ROAD-602'), endPosition: position('LOGI-701'), durationMs: 900, holdMs: 1_100, visual: 'complete' },
+  ];
 }
 
 function setProductionVisual(vehicle: ProductionVehicle, visual: ProductionVisual): void {
@@ -1774,37 +2122,24 @@ function createProductionAnimation(
   onStage: (update: ProductionStageUpdate) => void,
   stationVisuals: ReadonlyMap<string, FactoryStationVisual>,
 ): { play(signal?: AbortSignal): Promise<void>; cancel(): void; dispose(): void } {
-  const stages: readonly ProductionStage[] = [
-    { startX: -30, endX: -23, durationMs: 1_000, holdMs: 850, visual: 'material' },
-    { tag: 'PRESS-101', startX: -23, endX: -21, durationMs: 850, holdMs: 750, visual: 'material' },
-    { tag: 'BODY-101', startX: -21, endX: -18, durationMs: 1_050, holdMs: 1_100, visual: 'body' },
-    { tag: 'CONV-101', startX: -18, endX: -13, durationMs: 1_050, holdMs: 1_100, visual: 'body' },
-    { tag: 'WELD-201', startX: -13, endX: -8, durationMs: 950, holdMs: 850, visual: 'body' },
-    { tag: 'FRAME-202', startX: -8, endX: -4, durationMs: 900, holdMs: 800, visual: 'body' },
-    { tag: 'PREP-301', startX: -4, endX: -1, durationMs: 850, holdMs: 750, visual: 'body' },
-    { tag: 'PAINT-301', startX: -1, endX: 3, durationMs: 1_000, holdMs: 900, visual: 'paint' },
-    { tag: 'SEAL-304', startX: 3, endX: 7, durationMs: 850, holdMs: 800, visual: 'paint' },
-    { tag: 'OVEN-302', startX: 7, endX: 11, durationMs: 950, holdMs: 850, visual: 'paint' },
-    { tag: 'TRIM-401', startX: 11, endX: 16, durationMs: 1_000, holdMs: 950, visual: 'assembly' },
-    { tag: 'CHASSIS-404', startX: 16, endX: 20, durationMs: 900, holdMs: 850, visual: 'assembly' },
-    { tag: 'POWER-402', startX: 20, endX: 22, durationMs: 900, holdMs: 850, visual: 'assembly' },
-    { tag: 'GLASS-403', startX: 22, endX: 25, durationMs: 950, holdMs: 850, visual: 'assembly' },
-    { tag: 'QA-501', startX: 25, endX: 29, durationMs: 1_000, holdMs: 900, visual: 'complete' },
-    { tag: 'CAL-502', startX: 29, endX: 31, durationMs: 850, holdMs: 750, visual: 'complete' },
-    { tag: 'EOL-601', startX: 31, endX: 34, durationMs: 950, holdMs: 850, visual: 'complete' },
-    { tag: 'ROAD-602', startX: 34, endX: 38, durationMs: 1_000, holdMs: 950, visual: 'complete' },
-    { tag: 'LOGI-701', startX: 38, endX: 41, durationMs: 900, holdMs: 1_100, visual: 'complete' },
-  ];
+  const stages = productionStageRoute();
   const stationMotions = new Map<string, FactoryStationMotion>([
+    ['PRESS-101', createPressStationMotion(stationVisuals.get('PRESS-101'))],
     ['BODY-101', createBodyStationMotion(stationVisuals.get('BODY-101'))],
     ['CONV-101', createConveyorStationMotion(stationVisuals.get('CONV-101'))],
     ['WELD-201', createWeldingRobotMotion(stationVisuals.get('WELD-201'))],
     ['ROBOT-201', createStandaloneWeldingRobotMotion(stationVisuals.get('ROBOT-201'))],
+    ['FRAME-202', createFrameAssemblyMotion(stationVisuals.get('FRAME-202'))],
     ['PAINT-301', createPaintBoothMotion(stationVisuals.get('PAINT-301'))],
+    ['PREP-301', createPretreatmentMotion(stationVisuals.get('PREP-301'))],
     ['OVEN-302', createDryingOvenMotion(stationVisuals.get('OVEN-302'))],
+    ['SEAL-304', createSealStationMotion(stationVisuals.get('SEAL-304'))],
     ['TRIM-401', createTrimAssemblyMotion(stationVisuals.get('TRIM-401'))],
+    ['CHASSIS-404', createChassisStationMotion(stationVisuals.get('CHASSIS-404'))],
     ['QA-501', createQualityInspectionMotion(stationVisuals.get('QA-501'))],
+    ['CAL-502', createCalibrationStationMotion(stationVisuals.get('CAL-502'))],
     ['EOL-601', createEndOfLineTestMotion(stationVisuals.get('EOL-601'))],
+    ['ROAD-602', createRoadTestStationMotion(stationVisuals.get('ROAD-602'))],
     ['LOGI-701', createFinishedVehicleDockMotion(stationVisuals.get('LOGI-701'))],
     ['POWER-402', createPowertrainInstallMotion(stationVisuals.get('POWER-402'))],
     ['GLASS-403', createGlassDoorInstallMotion(stationVisuals.get('GLASS-403'))],
@@ -1828,7 +2163,12 @@ function createProductionAnimation(
     externalSignal?.addEventListener('abort', abortFromOutside, { once: true });
     vehicle.root.visible = true;
     setProductionVisual(vehicle, 'material');
-    vehicle.root.setLocalMatrix(translationMatrix(stages[0]!.startX));
+    const firstPosition = stages[0]!.startPosition;
+    vehicle.root.setLocalMatrix(translationMatrix(
+      firstPosition[0],
+      firstPosition[1],
+      firstPosition[2],
+    ));
     stationMotions.forEach((motion) => motion.reset());
     onStage({
       selectionId: null,
@@ -1856,19 +2196,21 @@ function createProductionAnimation(
           const progress = Math.min(1, (performance.now() - startedAt) / stage.durationMs);
           const eased = progress * progress * (3 - 2 * progress);
           vehicle.root.setLocalMatrix(translationMatrix(
-            stage.startX + (stage.endX - stage.startX) * eased,
+            stage.startPosition[0] + (stage.endPosition[0] - stage.startPosition[0]) * eased,
+            stage.startPosition[1] + (stage.endPosition[1] - stage.startPosition[1]) * eased,
+            stage.startPosition[2] + (stage.endPosition[2] - stage.startPosition[2]) * eased,
           ));
-          if (stage.tag) stationMotions.get(stage.tag)?.update(progress);
           engine.requestRender('production-animation');
           if (progress >= 1) break;
           await sleep(16);
         }
         const holdStartedAt = performance.now();
-        while (performance.now() - holdStartedAt < stage.holdMs) {
+        while (true) {
           if (controller.signal.aborted || disposed) return;
-          const holdProgress = ((performance.now() - holdStartedAt) % 1_200) / 1_200;
+          const holdProgress = Math.min(1, (performance.now() - holdStartedAt) / Math.max(1, stage.holdMs));
           if (stage.tag) stationMotions.get(stage.tag)?.update(holdProgress);
           engine.requestRender('production-hold');
+          if (holdProgress >= 1) break;
           await sleep(16);
         }
       }
@@ -1907,6 +2249,7 @@ function createProductionAnimation(
 }
 
 interface StationPreviewAnimation {
+  has(tag: string): boolean;
   play(tag: string): void;
   cancel(): void;
   dispose(): void;
@@ -1917,29 +2260,43 @@ function createStationPreviewAnimation(
   stationVisuals: ReadonlyMap<string, FactoryStationVisual>,
 ): StationPreviewAnimation {
   const stationMotions = new Map<string, FactoryStationMotion>([
+    ['PRESS-101', createPressStationMotion(stationVisuals.get('PRESS-101'))],
     ['BODY-101', createBodyStationMotion(stationVisuals.get('BODY-101'))],
     ['CONV-101', createConveyorStationMotion(stationVisuals.get('CONV-101'))],
     ['WELD-201', createWeldingRobotMotion(stationVisuals.get('WELD-201'))],
     ['ROBOT-201', createStandaloneWeldingRobotMotion(stationVisuals.get('ROBOT-201'))],
+    ['FRAME-202', createFrameAssemblyMotion(stationVisuals.get('FRAME-202'))],
     ['PAINT-301', createPaintBoothMotion(stationVisuals.get('PAINT-301'))],
+    ['PREP-301', createPretreatmentMotion(stationVisuals.get('PREP-301'))],
     ['OVEN-302', createDryingOvenMotion(stationVisuals.get('OVEN-302'))],
+    ['SEAL-304', createSealStationMotion(stationVisuals.get('SEAL-304'))],
     ['TRIM-401', createTrimAssemblyMotion(stationVisuals.get('TRIM-401'))],
+    ['CHASSIS-404', createChassisStationMotion(stationVisuals.get('CHASSIS-404'))],
     ['QA-501', createQualityInspectionMotion(stationVisuals.get('QA-501'))],
+    ['CAL-502', createCalibrationStationMotion(stationVisuals.get('CAL-502'))],
     ['EOL-601', createEndOfLineTestMotion(stationVisuals.get('EOL-601'))],
+    ['ROAD-602', createRoadTestStationMotion(stationVisuals.get('ROAD-602'))],
     ['LOGI-701', createFinishedVehicleDockMotion(stationVisuals.get('LOGI-701'))],
     ['POWER-402', createPowertrainInstallMotion(stationVisuals.get('POWER-402'))],
     ['GLASS-403', createGlassDoorInstallMotion(stationVisuals.get('GLASS-403'))],
   ]);
   const durationByTag: ReadonlyMap<string, number> = new Map([
+    ['PRESS-101', 1_500],
     ['BODY-101', 1_400],
     ['CONV-101', 1_400],
     ['WELD-201', 1_700],
     ['ROBOT-201', 1_700],
+    ['FRAME-202', 1_700],
     ['PAINT-301', 1_800],
+    ['PREP-301', 1_600],
     ['OVEN-302', 1_800],
+    ['SEAL-304', 1_650],
     ['TRIM-401', 1_900],
+    ['CHASSIS-404', 1_750],
     ['QA-501', 2_000],
+    ['CAL-502', 1_700],
     ['EOL-601', 1_900],
+    ['ROAD-602', 1_900],
     ['LOGI-701', 1_900],
     ['POWER-402', 1_900],
     ['GLASS-403', 1_900],
@@ -1961,6 +2318,9 @@ function createStationPreviewAnimation(
   };
 
   return {
+    has(tag: string): boolean {
+      return stationMotions.has(tag) && durationByTag.has(tag);
+    },
     play(tag: string): void {
       const motion = stationMotions.get(tag);
       const duration = durationByTag.get(tag);
@@ -2038,8 +2398,8 @@ export async function createFactorySceneController(
     target: [8, 0, 0],
   });
   const overviewBounds: ICEGeometryBoundsLike = {
-    min: [-27, -1, -11],
-    max: [44, 8, 11],
+    min: [-54, -1, -15],
+    max: [80, 8, 15],
   };
   const overviewCenter = center(overviewBounds);
   const overviewRadius = radius(overviewBounds);
@@ -2279,20 +2639,7 @@ export async function createFactorySceneController(
     );
     logicalSelection = ids;
     const selectedTag = ids[0] ? tagForSelectionId(ids[0]) : undefined;
-    if (
-      selectedTag === 'BODY-101'
-      || selectedTag === 'CONV-101'
-      || selectedTag === 'WELD-201'
-      || selectedTag === 'ROBOT-201'
-      || selectedTag === 'PAINT-301'
-      || selectedTag === 'OVEN-302'
-      || selectedTag === 'TRIM-401'
-      || selectedTag === 'QA-501'
-      || selectedTag === 'EOL-601'
-      || selectedTag === 'LOGI-701'
-      || selectedTag === 'POWER-402'
-      || selectedTag === 'GLASS-403'
-    ) {
+    if (selectedTag && stationPreviewAnimation.has(selectedTag)) {
       stationPreviewAnimation.play(selectedTag);
     } else {
       stationPreviewAnimation.cancel();

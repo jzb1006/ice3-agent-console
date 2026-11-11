@@ -4,30 +4,45 @@ import { ICEScene } from 'ice3';
 import { FACTORY_EQUIPMENT } from '../shared/factory.ts';
 import {
   addBodyLoadingStation,
+  addCalibrationStation,
+  addChassisStation,
   addDryingOvenStation,
   addEndOfLineTestStation,
   addFinishedVehicleDockStation,
+  addFrameAssemblyStation,
   addGlassDoorInstallStation,
   addMainConveyorStation,
   addPaintBoothStation,
   addPowertrainInstallStation,
+  addPressStation,
+  addPretreatmentStation,
   addQualityInspectionStation,
+  addRoadTestStation,
+  addSealStation,
   addStandaloneWeldingRobotStation,
   addTrimAssemblyStation,
   addWeldingRobotStation,
   boundsForEquipment,
   createBodyStationMotion,
+  createCalibrationStationMotion,
+  createChassisStationMotion,
   createConveyorStationMotion,
   createDryingOvenMotion,
   createEndOfLineTestMotion,
   createFinishedVehicleDockMotion,
+  createFrameAssemblyMotion,
   createGlassDoorInstallMotion,
   createPaintBoothMotion,
   createPowertrainInstallMotion,
+  createPressStationMotion,
+  createPretreatmentMotion,
   createQualityInspectionMotion,
+  createRoadTestStationMotion,
+  createSealStationMotion,
   createStandaloneWeldingRobotMotion,
   createTrimAssemblyMotion,
   createWeldingRobotMotion,
+  productionStageRoute,
 } from '../src/scene/factory-browser.ts';
 
 test('BODY-101 visual parts preserve the equipment selection identity', () => {
@@ -426,4 +441,52 @@ test('ROBOT-201 standalone welding robot preserves selection identity and animat
   expect(arm.toJSON().matrix).toBeUndefined();
   expect(torch.toJSON().matrix).toBeUndefined();
   expect(spark.visible).toBe(false);
+});
+
+test('new production stations render structured animated parts', () => {
+  const fixtures = [
+    ['PRESS-101', addPressStation, createPressStationMotion, 'press-die'],
+    ['FRAME-202', addFrameAssemblyStation, createFrameAssemblyMotion, 'frame-arm-left'],
+    ['PREP-301', addPretreatmentStation, createPretreatmentMotion, 'prep-roller-0'],
+    ['SEAL-304', addSealStation, createSealStationMotion, 'seal-nozzle'],
+    ['CHASSIS-404', addChassisStation, createChassisStationMotion, 'chassis-lift'],
+    ['CAL-502', addCalibrationStation, createCalibrationStationMotion, 'cal-beam'],
+    ['ROAD-602', addRoadTestStation, createRoadTestStationMotion, 'road-roller-0'],
+  ] as const;
+  for (const [tag, addStation, createMotion, movingPart] of fixtures) {
+    const scene = new ICEScene({ id: `test-scene-${tag}` });
+    const item = FACTORY_EQUIPMENT.find((equipment) => equipment.tag === tag);
+    if (!item) throw new Error(`${tag} fixture is missing`);
+    const visual = addStation(scene, item);
+    expect(scene.children.length).toBeGreaterThan(8);
+    expect(scene.children.every((child) => child.selectionId === item.selectionId)).toBe(true);
+    const part = visual.parts.get(movingPart);
+    if (!part) throw new Error(`${tag} motion fixture is missing`);
+    const motion = createMotion(visual);
+    motion.update(0.2);
+    expect(part.toJSON().matrix).toBeDefined();
+    motion.reset();
+    expect(part.toJSON().matrix).toBeUndefined();
+  }
+});
+
+test('production flow routes the vehicle through expanded station centers', () => {
+  const route = productionStageRoute();
+  const frame = route.find((stage) => stage.tag === 'FRAME-202');
+  const prep = route.find((stage) => stage.tag === 'PREP-301');
+  const chassis = route.find((stage) => stage.tag === 'CHASSIS-404');
+  if (!frame || !prep || !chassis) throw new Error('production route fixtures are missing');
+
+  const expectPosition = (
+    actual: readonly [number, number, number],
+    expected: readonly [number, number, number],
+  ): void => {
+    actual.forEach((value, index) => expect(value).toBeCloseTo(expected[index]!, 8));
+  };
+  expectPosition(frame.startPosition, [-14, 0, 0]);
+  expectPosition(frame.endPosition, [-6.125, 0, -8.1]);
+  expectPosition(prep.startPosition, [-6.125, 0, -8.1]);
+  expectPosition(prep.endPosition, [0, 0, -8.1]);
+  expectPosition(chassis.startPosition, [22.75, 0, 0]);
+  expectPosition(chassis.endPosition, [24.5, 0, -8.1]);
 });
