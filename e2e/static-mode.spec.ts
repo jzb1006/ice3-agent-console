@@ -108,6 +108,35 @@ test('shows the production tour HUD while the vehicle moves through the line', a
     .toHaveCount(19);
 });
 
+test('guides a manual factory visit without auto-advancing or trapping the user', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:8111/?demo=1&autoplay=0');
+  await expect(page.locator('[data-role="scene-status"]'))
+    .toHaveText('场景已就绪', { timeout: 60_000 });
+
+  await page.getByRole('button', { name: '厂房参观', exact: true }).click();
+  const tour = page.locator('[data-role="tour-hud"]');
+  await expect(tour).toBeVisible({ timeout: 10_000 });
+  await expect(tour.locator('[data-role="tour-controls"] .tour-hud__control'))
+    .toHaveCount(5);
+  await expect(tour.locator('[data-role="tour-controls"]'))
+    .toContainText('W A S D / 方向键');
+  await expect(tour.locator('[data-role="tour-controls"]'))
+    .toContainText('滚轮远近');
+
+  await page.getByRole('button', { name: /定位 车身冲压机 PRESS-101/ }).click();
+  await expect(tour.locator('[data-role="tour-step"]')).toHaveText('01 / 19');
+  await page.waitForTimeout(1_000);
+  await expect(tour.locator('[data-role="tour-step"]')).toHaveText('01 / 19');
+  await expect(tour.locator('[data-role="tour-controls"]'))
+    .toContainText('点击节点');
+
+  await page.getByRole('button', { name: '退出参观', exact: true }).click();
+  await expect(tour).toBeHidden({ timeout: 10_000 });
+  await expect(page.locator('#stage')).toHaveAttribute('data-tour-active', 'false');
+});
+
 test('keeps the selected equipment highlighted during scenario playback', async ({
   page,
 }) => {

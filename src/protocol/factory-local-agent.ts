@@ -42,6 +42,12 @@ export function factoryScriptedPlan(input: RunAgentInput): readonly TextStream[]
   const text = messageText(input);
   const selected = selectedEquipment(input);
   if (presentationMode(input) === 'guided-tour' && includesAny(text, ['整个汽车', '汽车制造工厂', '整厂'])) return OPENING_TOUR;
+  if (includesAny(text, ['退出参观', '结束参观'])) {
+    return [{ text: '已退出厂房参观任务，镜头回到整厂总览。' }];
+  }
+  if (includesAny(text, ['厂房参观', '参观厂房', '第一人称', '自由走动'])) {
+    return [{ text: '已进入厂房参观任务。你可以使用 W/A/S/D 或方向键自由走动，点击节点后我会说明当前设备和工艺。' }];
+  }
   if (includesAny(text, ['清除', '复位', '回到整厂', '回到全厂', '回到总览'])) return [{ text: '好的，已清除设备聚焦并回到整厂总览。', tool: { name: 'clear_scene_focus', args: {} } }];
   if (includesAny(text, ['整车生产流', '生产流', '材料到整车', '整车出厂'])) {
     return [{

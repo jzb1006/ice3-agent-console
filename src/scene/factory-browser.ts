@@ -18,6 +18,7 @@ import {
   FACTORY_EQUIPMENT,
   type FactoryEquipment,
 } from '../../shared/factory.js';
+import { FACTORY_VISIT_STOPS } from '../../shared/factory-scenarios.js';
 import { SceneCommandExecutor } from './controller.js';
 import type {
   EquipmentRecord,
@@ -47,6 +48,23 @@ export interface FactoryAmbientVisual {
   readonly utilityCaps: readonly ICEMesh[];
   readonly steamPuffs: readonly ICEMesh[];
   readonly inspectionScan: ICEMesh;
+  readonly visitor?: FactoryVisitorVisual;
+}
+
+export interface FactoryVisitorVisual {
+  readonly root: ICENode;
+  readonly leftArm: ICEMesh;
+  readonly rightArm: ICEMesh;
+  readonly leftLeg: ICEMesh;
+  readonly rightLeg: ICEMesh;
+  readonly path: readonly LayoutPosition[];
+  readonly nodes: readonly FactoryVisitNode[];
+}
+
+export interface FactoryVisitNode {
+  readonly tag: string;
+  readonly position: LayoutPosition;
+  readonly radius: number;
 }
 
 interface BrowserSceneOptions {
@@ -54,6 +72,7 @@ interface BrowserSceneOptions {
   readonly visibleViewport?: () => ScreenRect;
   readonly onStatus?: SceneStatusListener;
   readonly onSelection?: (ids: readonly string[]) => void;
+  readonly onVisitNode?: (selectionId: string) => void;
   readonly onProductionStage?: (update: ProductionStageUpdate) => void;
   readonly onUserCameraIntent?: () => void;
 }
@@ -194,6 +213,7 @@ function addFactoryDecor(scene: ICEScene): FactoryAmbientVisual {
   const craneTrolleys: ICEMesh[] = [];
   const utilityCaps: ICEMesh[] = [];
   const steamPuffs: ICEMesh[] = [];
+  const visitor = addFactoryVisitor(scene);
 
   scene.addChild(mesh('factory-floor', [82, 0.2, 42], [0, -0.7, 0], floor, { edgeColor: '#3b6667', shading: 'flat' }));
   scene.addChild(mesh('courtyard-slab', [34, 0.08, 18], [0, -0.57, 2], '#2c4648', { edgeColor: '#5d8580', shading: 'flat' }));
@@ -332,7 +352,60 @@ function addFactoryDecor(scene: ICEScene): FactoryAmbientVisual {
   scene.addChild(mesh('body-district-paving', [30, 0.04, 3.8], [-18, -0.51, -12.6], '#365259', { edgeColor: '#668b89', shading: 'flat' }));
   scene.addChild(mesh('paint-district-paving', [32, 0.04, 3.8], [11, -0.51, -5.6], '#3d5655', { edgeColor: '#76958c', shading: 'flat' }));
   scene.addChild(mesh('quality-district-paving', [34, 0.04, 3.8], [-14, -0.51, 12.6], '#3c4e5b', { edgeColor: '#7891a0', shading: 'flat' }));
-  return { signalLights, craneTrolleys, utilityCaps, steamPuffs, inspectionScan };
+  return { signalLights, craneTrolleys, utilityCaps, steamPuffs, inspectionScan, visitor };
+}
+
+export function addFactoryVisitor(scene: ICEScene): FactoryVisitorVisual {
+  const path: readonly LayoutPosition[] = [
+    [18, -0.5, 4],
+    [18, -0.5, -4],
+    [6, -0.5, -4],
+    [6, -0.5, 4],
+    [-10, -0.5, 4],
+    [-10, -0.5, 11],
+    [18, -0.5, 11],
+    [18, -0.5, 4],
+  ];
+  const root = new ICENode({
+    id: 'factory-visitor',
+    displayName: '参观者',
+    metadata: { role: 'factory-visitor' },
+    position: path[0],
+  });
+  const nodes: readonly FactoryVisitNode[] = FACTORY_VISIT_STOPS.flatMap(({ tag }) => {
+    const equipment = FACTORY_EQUIPMENT.find((item) => item.tag === tag);
+    if (!equipment) return [];
+    return [{
+      tag,
+      position: [equipment.position[0], -0.5, equipment.position[2]] as LayoutPosition,
+      radius: 2.6,
+    }];
+  });
+  root.visible = false;
+  const part = (
+    id: string,
+    size: readonly [number, number, number],
+    position: LayoutPosition,
+    color: string,
+    edgeColor: string,
+  ): ICEMesh => {
+    const visual = mesh(id, size, position, color, { edgeColor });
+    root.addChild(visual);
+    return visual;
+  };
+  const leftArm = part('factory-visitor-left-arm', [0.18, 0.72, 0.18], [-0.42, 1.05, 0], '#d59a63', '#ffe0b5');
+  const rightArm = part('factory-visitor-right-arm', [0.18, 0.72, 0.18], [0.42, 1.05, 0], '#d59a63', '#ffe0b5');
+  const leftLeg = part('factory-visitor-left-leg', [0.2, 0.72, 0.2], [-0.16, 0.4, 0], '#263d4d', '#8caeb5');
+  const rightLeg = part('factory-visitor-right-leg', [0.2, 0.72, 0.2], [0.16, 0.4, 0], '#263d4d', '#8caeb5');
+  part('factory-visitor-torso', [0.62, 0.82, 0.38], [0, 1.08, 0], '#d7a83f', '#fff0a1');
+  part('factory-visitor-vest', [0.66, 0.46, 0.4], [0, 1.12, -0.02], '#4b9e91', '#b8f0df');
+  part('factory-visitor-head', [0.36, 0.38, 0.36], [0, 1.72, 0], '#d59a63', '#ffe0b5');
+  part('factory-visitor-helmet', [0.48, 0.16, 0.46], [0, 1.96, 0], '#d7b84c', '#fff0a1');
+  part('factory-visitor-backpack', [0.46, 0.54, 0.2], [0, 1.12, 0.27], '#bd7440', '#ffd3a6');
+  part('factory-visitor-left-shoe', [0.25, 0.12, 0.42], [-0.16, 0.02, -0.08], '#17272b', '#6f9695');
+  part('factory-visitor-right-shoe', [0.25, 0.12, 0.42], [0.16, 0.02, -0.08], '#17272b', '#6f9695');
+  scene.addChild(root);
+  return { root, leftArm, rightArm, leftLeg, rightLeg, path, nodes };
 }
 
 export function addBodyLoadingStation(
@@ -1442,6 +1515,23 @@ function translationMatrix(x: number, y = 0, z = 0): readonly [
   ];
 }
 
+function yRotationTranslationMatrix(
+  position: readonly [number, number, number],
+  angle: number,
+): readonly [
+  number, number, number, number, number, number, number, number,
+  number, number, number, number, number, number, number, number,
+] {
+  const cosine = Math.cos(angle);
+  const sine = Math.sin(angle);
+  return [
+    cosine, 0, -sine, 0,
+    0, 1, 0, 0,
+    sine, 0, cosine, 0,
+    position[0], position[1], position[2], 1,
+  ];
+}
+
 function zRotationMatrix(
   position: readonly [number, number, number],
   angle: number,
@@ -1501,6 +1591,13 @@ export function createFactoryAmbientMotion(
         puff.clearLocalMatrix();
       });
       visual.inspectionScan.clearLocalMatrix();
+      if (visual.visitor) {
+        visual.visitor.root.clearLocalMatrix();
+        visual.visitor.leftArm.clearLocalMatrix();
+        visual.visitor.rightArm.clearLocalMatrix();
+        visual.visitor.leftLeg.clearLocalMatrix();
+        visual.visitor.rightLeg.clearLocalMatrix();
+      }
     },
   };
 }
@@ -1529,6 +1626,299 @@ export function updateFactoryAmbientVisual(visual: FactoryAmbientVisual, elapsed
   const scanBase = visual.inspectionScan.position;
   const scanOffset = Math.sin(elapsed * 1.4) * 1.8;
   visual.inspectionScan.setLocalMatrix(translationMatrix(scanBase.x + scanOffset, scanBase.y, scanBase.z));
+}
+
+export function applyFactoryVisitorPose(
+  visitor: FactoryVisitorVisual,
+  position: LayoutPosition,
+  heading: number,
+  stride: number,
+): void {
+  visitor.root.visible = true;
+  visitor.root.setLocalMatrix(yRotationTranslationMatrix(position, heading));
+  const leftArm = visitor.leftArm.position;
+  const rightArm = visitor.rightArm.position;
+  const leftLeg = visitor.leftLeg.position;
+  const rightLeg = visitor.rightLeg.position;
+  visitor.leftArm.setLocalMatrix(zRotationMatrix([leftArm.x, leftArm.y, leftArm.z], stride));
+  visitor.rightArm.setLocalMatrix(zRotationMatrix([rightArm.x, rightArm.y, rightArm.z], -stride));
+  visitor.leftLeg.setLocalMatrix(zRotationMatrix([leftLeg.x, leftLeg.y, leftLeg.z], -stride * 0.8));
+  visitor.rightLeg.setLocalMatrix(zRotationMatrix([rightLeg.x, rightLeg.y, rightLeg.z], stride * 0.8));
+}
+
+export function updateFactoryVisitorVisual(
+  visitor: FactoryVisitorVisual | undefined,
+  elapsed: number,
+): void {
+  if (!visitor || visitor.path.length < 2) return;
+  const segments = visitor.path.slice(0, -1).map((start, index) => {
+    const end = visitor.path[index + 1]!;
+    return {
+      start,
+      end,
+      length: Math.hypot(end[0] - start[0], end[2] - start[2]),
+    };
+  });
+  const totalLength = segments.reduce((total, segment) => total + segment.length, 0);
+  if (totalLength <= 0) return;
+  let distance = (elapsed * 1.35) % totalLength;
+  let active = segments[0]!;
+  for (const segment of segments) {
+    if (distance <= segment.length) {
+      active = segment;
+      break;
+    }
+    distance -= segment.length;
+  }
+  const progress = active.length === 0 ? 0 : distance / active.length;
+  const x = active.start[0] + (active.end[0] - active.start[0]) * progress;
+  const y = active.start[1] + (active.end[1] - active.start[1]) * progress;
+  const z = active.start[2] + (active.end[2] - active.start[2]) * progress;
+  const heading = Math.atan2(active.end[0] - active.start[0], active.end[2] - active.start[2]);
+  const stride = Math.sin(elapsed * 8.5) * 0.34;
+  applyFactoryVisitorPose(visitor, [x, y, z], heading, stride);
+}
+
+export function factoryVisitMovementDirection(
+  heading: number,
+  forward: number,
+  strafe: number,
+): readonly [number, number] {
+  const magnitude = Math.hypot(forward, strafe);
+  if (magnitude === 0) return [0, 0];
+  const normalizedForward = forward / magnitude;
+  const normalizedStrafe = strafe / magnitude;
+  const sinHeading = Math.sin(heading);
+  const cosHeading = Math.cos(heading);
+  // The camera's screen-right vector is (-cos(heading), sin(heading)).
+  return [
+    sinHeading * normalizedForward - cosHeading * normalizedStrafe,
+    cosHeading * normalizedForward + sinHeading * normalizedStrafe,
+  ];
+}
+
+export function findFactoryVisitNode(
+  nodes: readonly FactoryVisitNode[],
+  position: LayoutPosition,
+): FactoryVisitNode | undefined {
+  let nearest: FactoryVisitNode | undefined;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (const node of nodes) {
+    const distance = Math.hypot(
+      position[0] - node.position[0],
+      position[2] - node.position[2],
+    );
+    if (distance <= node.radius && distance < nearestDistance) {
+      nearest = node;
+      nearestDistance = distance;
+    }
+  }
+  return nearest;
+}
+
+export interface FactoryVisitController {
+  start(): void;
+  stop(): void;
+  reset(): void;
+  dispose(): void;
+}
+
+export function createFactoryVisitController(
+  engine: ICE3,
+  camera: ICEPerspectiveCamera,
+  visitor: FactoryVisitorVisual,
+  onNodeReached?: (node: FactoryVisitNode) => void,
+): FactoryVisitController {
+  const pressedKeys = new Set<string>();
+  const bounds = { minX: -34, maxX: 34, minZ: -11, maxZ: 12 };
+  let position: LayoutPosition = visitor.path[0] ?? [18, -0.5, 4];
+  let heading = -Math.PI / 2;
+  let visitorHeading = heading;
+  let pitch = 0.36;
+  let distance = 7;
+  let draggingPointer: number | null = null;
+  let lastPoint: readonly [number, number] = [0, 0];
+  let frame: number | null = null;
+  let lastFrameAt = performance.now();
+  let active = false;
+  let disposed = false;
+  let activeNodeTag: string | null = null;
+
+  const clamp = (value: number, min: number, max: number): number => (
+    Math.min(max, Math.max(min, value))
+  );
+  const updateCamera = (): void => {
+    const target: LayoutPosition = [position[0], position[1] + 1.15, position[2]];
+    const horizontal = Math.cos(pitch) * distance;
+    camera.setTarget(target).setPosition([
+      target[0] - Math.sin(heading) * horizontal,
+      target[1] + Math.sin(pitch) * distance,
+      target[2] - Math.cos(heading) * horizontal,
+    ]);
+  };
+  const updateVisitor = (stride: number, poseHeading = visitorHeading): void => {
+    applyFactoryVisitorPose(visitor, position, poseHeading, stride);
+  };
+  const onKeyDown = (event: { readonly param?: { readonly event?: { readonly code?: string } } }): void => {
+    const code = event.param?.event?.code;
+    if (code && /^(Key[WASD]|Arrow(Up|Down|Left|Right))$/.test(code)) {
+      pressedKeys.add(code);
+    }
+  };
+  const onKeyUp = (event: { readonly param?: { readonly event?: { readonly code?: string } } }): void => {
+    const code = event.param?.event?.code;
+    if (code) pressedKeys.delete(code);
+  };
+  const onKeyCancel = (): void => {
+    pressedKeys.clear();
+  };
+  const isScenePointer = (event: {
+    readonly param?: {
+      readonly target?: { readonly kind?: string };
+      readonly event?: { readonly pointerId?: number; readonly point?: { readonly x: number; readonly y: number } };
+    };
+  }): boolean => event.param?.target?.kind === 'scene';
+  const onPointerDown = (event: Parameters<typeof isScenePointer>[0]): void => {
+    if (!isScenePointer(event)) return;
+    const input = event.param?.event;
+    if (input?.pointerId === undefined || !input.point) return;
+    draggingPointer = input.pointerId;
+    lastPoint = [input.point.x, input.point.y];
+  };
+  const onPointerMove = (event: Parameters<typeof isScenePointer>[0]): void => {
+    if (!active || !isScenePointer(event)) return;
+    const input = event.param?.event;
+    if (input?.pointerId !== draggingPointer || !input.point) return;
+    heading -= (input.point.x - lastPoint[0]) * 0.005;
+    pitch = clamp(pitch + (input.point.y - lastPoint[1]) * 0.004, -0.15, 0.9);
+    lastPoint = [input.point.x, input.point.y];
+    updateCamera();
+    engine.requestRender('factory-visit-camera-rotate');
+  };
+  const onPointerUp = (event: Parameters<typeof isScenePointer>[0]): void => {
+    const pointerId = event.param?.event?.pointerId;
+    if (pointerId === draggingPointer) draggingPointer = null;
+  };
+  const onWheel = (event: {
+    readonly param?: {
+      readonly target?: { readonly kind?: string };
+      readonly event?: { readonly deltaY?: number };
+    };
+  }): void => {
+    if (!active || event.param?.target?.kind !== 'scene') return;
+    const deltaY = event.param?.event?.deltaY ?? 0;
+    distance = clamp(distance + deltaY * 0.012, 3, 12);
+    updateCamera();
+    engine.requestRender('factory-visit-camera-zoom');
+  };
+  const tick = (): void => {
+    if (!active || disposed) return;
+    const now = performance.now();
+    const deltaSeconds = Math.min(0.064, Math.max(0, (now - lastFrameAt) / 1_000));
+    lastFrameAt = now;
+    const forward = Number(pressedKeys.has('KeyW') || pressedKeys.has('ArrowUp'))
+      - Number(pressedKeys.has('KeyS') || pressedKeys.has('ArrowDown'));
+    const strafe = Number(pressedKeys.has('KeyD') || pressedKeys.has('ArrowRight'))
+      - Number(pressedKeys.has('KeyA') || pressedKeys.has('ArrowLeft'));
+    const magnitude = Math.hypot(forward, strafe);
+    if (magnitude > 0) {
+      const [directionX, directionZ] = factoryVisitMovementDirection(heading, forward, strafe);
+      const speed = 4.2 * deltaSeconds;
+      const nextPosition: LayoutPosition = [
+        clamp(position[0] + directionX * speed, bounds.minX, bounds.maxX),
+        position[1],
+        clamp(position[2] + directionZ * speed, bounds.minZ, bounds.maxZ),
+      ];
+      const activeNode = activeNodeTag
+        ? visitor.nodes.find((node) => node.tag === activeNodeTag)
+        : undefined;
+      if (activeNode) {
+        const currentDistance = Math.hypot(
+          position[0] - activeNode.position[0],
+          position[2] - activeNode.position[2],
+        );
+        const nextDistance = Math.hypot(
+          nextPosition[0] - activeNode.position[0],
+          nextPosition[2] - activeNode.position[2],
+        );
+        if (nextDistance < currentDistance) {
+          updateVisitor(0);
+          updateCamera();
+          engine.requestRender('factory-visit-node-hold');
+          frame = requestAnimationFrame(tick);
+          return;
+        }
+        if (nextDistance > activeNode.radius + 0.45) activeNodeTag = null;
+      }
+      position = nextPosition;
+      visitorHeading = Math.atan2(directionX, directionZ);
+      const reachedNode = findFactoryVisitNode(visitor.nodes, position);
+      if (reachedNode && reachedNode.tag !== activeNodeTag) {
+        activeNodeTag = reachedNode.tag;
+        pressedKeys.clear();
+        updateVisitor(0);
+        onNodeReached?.(reachedNode);
+      } else {
+        updateVisitor(Math.sin(now / 1_000 * 10) * 0.42);
+      }
+    } else {
+      updateVisitor(0);
+    }
+    updateCamera();
+    engine.requestRender('factory-visit-character');
+    frame = requestAnimationFrame(tick);
+  };
+  const reset = (): void => {
+    position = visitor.path[0] ?? [18, -0.5, 4];
+    heading = -Math.PI / 2;
+    visitorHeading = heading;
+    pitch = 0.36;
+    distance = 7;
+    pressedKeys.clear();
+    activeNodeTag = null;
+    updateVisitor(0);
+    updateCamera();
+  };
+  return {
+    start(): void {
+      if (disposed || active) return;
+      active = true;
+      lastFrameAt = performance.now();
+      reset();
+      engine.on('KEY_DOWN', onKeyDown)
+        .on('KEY_UP', onKeyUp)
+        .on('KEY_CANCEL', onKeyCancel)
+        .on('POINTER_DOWN', onPointerDown)
+        .on('POINTER_MOVE', onPointerMove)
+        .on('POINTER_UP', onPointerUp)
+        .on('POINTER_CANCEL', onPointerUp)
+        .on('WHEEL', onWheel);
+      frame = requestAnimationFrame(tick);
+    },
+    stop(): void {
+      if (!active) return;
+      active = false;
+      pressedKeys.clear();
+      draggingPointer = null;
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = null;
+      engine.off('KEY_DOWN', onKeyDown)
+        .off('KEY_UP', onKeyUp)
+        .off('KEY_CANCEL', onKeyCancel)
+        .off('POINTER_DOWN', onPointerDown)
+        .off('POINTER_MOVE', onPointerMove)
+        .off('POINTER_UP', onPointerUp)
+        .off('POINTER_CANCEL', onPointerUp)
+        .off('WHEEL', onWheel);
+      visitor.root.visible = false;
+    },
+    reset,
+    dispose(): void {
+      if (disposed) return;
+      this.stop();
+      disposed = true;
+    },
+  };
 }
 
 export interface FactoryStationVisual {
@@ -2607,12 +2997,28 @@ export async function createFactorySceneController(
       overviewCenter[2] + overviewRadius * 1.15,
     ],
   };
+  const factoryVisit: CameraPose = {
+    // Third-person spawn behind the visitor, with room to see the character
+    // and the central factory route before movement begins.
+    position: [24.55, 3.1, 4],
+    target: [18, 0.65, 4],
+  };
   camera.setPosition(overview.position).setTarget(overview.target);
   let orbit = new ICEOrbitController(engine, camera).start();
   engine.setScene(scene).setCamera(camera);
   engine.start();
   const ambientMotion = createFactoryAmbientMotion(engine, ambientVisual);
   ambientMotion.start();
+  if (!ambientVisual.visitor) throw new Error('Factory visitor visual is missing');
+  const factoryVisitController = createFactoryVisitController(
+    engine,
+    camera,
+    ambientVisual.visitor,
+    (node) => {
+      const selectionId = selectionIdForTag(node.tag);
+      if (selectionId) options.onVisitNode?.(selectionId);
+    },
+  );
 
   let motion: AbortController | null = null;
   let selectionBlink: SelectionBlinkHandle | null = null;
@@ -2706,6 +3112,18 @@ export async function createFactorySceneController(
     selectionBlink?.cancel(restore);
     selectionBlink = null;
   };
+  const enterFactoryVisit = async (): Promise<void> => {
+    stopSelectionBlink(false);
+    logicalSelection = [];
+    applyDirectSelection([]);
+    await animate(factoryVisit);
+    orbit.dispose();
+    factoryVisitController.start();
+  };
+  const exitFactoryVisit = async (): Promise<void> => {
+    factoryVisitController.stop();
+    await setView('overview');
+  };
   const productionAnimation = createProductionAnimation(
     engine,
     productionVehicle,
@@ -2757,6 +3175,8 @@ export async function createFactorySceneController(
       if (signal?.aborted) return;
       await productionAnimation.play(signal);
     },
+    enterFactoryVisit,
+    exitFactoryVisit,
     snapshot(): SceneSnapshot {
       return {
         selectedIds: logicalSelection,
@@ -2857,6 +3277,8 @@ export async function createFactorySceneController(
     focus: port.focus,
     setView: port.setView,
     playProduction: port.playProduction,
+    enterFactoryVisit: port.enterFactoryVisit,
+    exitFactoryVisit: port.exitFactoryVisit,
     highlightSelection: port.highlightSelection,
     snapshot: port.snapshot,
     diagnostics: port.diagnostics,
@@ -2882,6 +3304,7 @@ export async function createFactorySceneController(
       productionAnimation.dispose();
       stationPreviewAnimation.dispose();
       ambientMotion.dispose();
+      factoryVisitController.dispose();
       motion?.abort();
       orbit.dispose();
       engine.destroy();

@@ -66,6 +66,8 @@ export interface ScenePort {
   focus(bounds: ICEGeometryBoundsLike): Promise<void>;
   setView(view: CameraView, area?: string): Promise<void>;
   readonly playProduction?: (signal?: AbortSignal) => Promise<void>;
+  readonly enterFactoryVisit?: () => Promise<void>;
+  readonly exitFactoryVisit?: () => Promise<void>;
   snapshot(): SceneSnapshot;
   diagnostics?(): SceneDiagnostics;
   capture?(): Promise<SceneCapture>;

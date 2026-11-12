@@ -29,6 +29,33 @@ export interface FactoryQuickActionGroup {
   readonly actions: readonly FactoryQuickAction[];
 }
 
+export interface FactoryVisitStop {
+  readonly tag: string;
+  readonly guide: string;
+}
+
+export const FACTORY_VISIT_STOPS: readonly FactoryVisitStop[] = Object.freeze([
+  { tag: 'PRESS-101', guide: '观察冲压机的上模与送料区，了解板材如何被成形为车身结构件。' },
+  { tag: 'BODY-101', guide: '从这里开始参观白车身上料，托盘将冲压件交给主线。' },
+  { tag: 'CONV-101', guide: '沿着输送方向观察车身如何在不同工位之间流转。' },
+  { tag: 'WELD-201', guide: '焊装机器人岛负责多点协同，把车身骨架连接成稳定结构。' },
+  { tag: 'ROBOT-201', guide: '这个独立点焊机器人展示单工位的焊接节拍和安全工作范围。' },
+  { tag: 'FRAME-202', guide: '在骨架合装站观察车身定位、夹紧和结构合装过程。' },
+  { tag: 'PREP-301', guide: '前处理槽先清洁并活化车身表面，为后续涂层附着做准备。' },
+  { tag: 'PAINT-301', guide: '喷涂舱通过多道喷涂工艺形成均匀的车身表面颜色和保护层。' },
+  { tag: 'SEAL-304', guide: '密封胶站处理焊缝和接缝，提升防水、隔音与耐久性。' },
+  { tag: 'OVEN-302', guide: '烘干炉通过温度和通过时间控制涂层固化质量。' },
+  { tag: 'TRIM-401', guide: '总装从座舱、线束和内饰模块开始，把车身变成可使用的整车。' },
+  { tag: 'CHASSIS-404', guide: '底盘与车轮装配站完成悬架、制动和车轮安装。' },
+  { tag: 'POWER-402', guide: '动力总成安装站把发动机、电驱或混动系统与车身合装。' },
+  { tag: 'GLASS-403', guide: '玻璃与车门安装站完成外覆盖件、玻璃和密封系统装配。' },
+  { tag: 'QA-501', guide: '视觉质量检测门扫描外观、间隙面差和关键装配点。' },
+  { tag: 'CAL-502', guide: '整车标定站校准摄像头、雷达、底盘和控制器参数。' },
+  { tag: 'EOL-601', guide: '下线测试台检查灯光、制动、转向和基础功能状态。' },
+  { tag: 'ROAD-602', guide: '动态路试道验证车辆行驶、制动和转向表现。' },
+  { tag: 'LOGI-701', guide: '成品物流月台是参观终点，合格车辆将在这里等待发运。' },
+]);
+
 const equipment = (tag: string): string => demoEquipmentSelectionId(tag);
 const focus = (tag: string): FactoryScenarioStep['tool'] => ({
   name: 'focus_equipment',
@@ -108,6 +135,13 @@ const FACTORY_SCENARIO_LIST: readonly FactoryScenario[] = Object.freeze([
 export const FACTORY_SCENARIOS: readonly FactoryScenario[] = FACTORY_SCENARIO_LIST;
 
 export const FACTORY_QUICK_ACTION_GROUPS: readonly FactoryQuickActionGroup[] = Object.freeze([
+  Object.freeze({
+    label: '任务参观',
+    actions: Object.freeze([
+      { id: 'factory-visit', label: '厂房参观', prompt: '开始厂房参观任务' },
+      { id: 'exit-factory-visit', label: '退出参观', prompt: '退出厂房参观任务' },
+    ]),
+  }),
   Object.freeze({
     label: '生产导览',
     actions: Object.freeze(FACTORY_SCENARIO_LIST.slice(0, 3).map((scenario) => ({

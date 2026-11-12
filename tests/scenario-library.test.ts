@@ -4,6 +4,7 @@ import { SCENE_TOOLS } from '../shared/contract.js';
 import { DEMO_ASSET_ID } from '../shared/demo-asset.js';
 import { FACTORY_EQUIPMENT } from '../shared/factory.js';
 import {
+  FACTORY_VISIT_STOPS,
   FACTORY_QUICK_ACTION_GROUPS,
   FACTORY_SCENARIOS,
   matchFactoryScenario,
@@ -11,6 +12,7 @@ import {
 
 test('publishes the confirmed quick-action groups and script order', () => {
   expect(FACTORY_QUICK_ACTION_GROUPS.map((group) => group.label)).toEqual([
+    '任务参观',
     '生产导览',
     '质量与物流',
     '快速操作',
@@ -18,6 +20,8 @@ test('publishes the confirmed quick-action groups and script order', () => {
   expect(FACTORY_QUICK_ACTION_GROUPS.flatMap((group) => (
     group.actions.map((action) => action.label)
   ))).toEqual([
+    '厂房参观',
+    '退出参观',
     '车身焊装',
     '涂装工艺',
     '总装流程',
@@ -26,6 +30,15 @@ test('publishes the confirmed quick-action groups and script order', () => {
     '整车生产流',
     '清除聚焦',
   ]);
+});
+
+test('publishes a complete manual factory visit route', () => {
+  expect(FACTORY_VISIT_STOPS).toHaveLength(19);
+  expect(FACTORY_VISIT_STOPS[0]?.tag).toBe('PRESS-101');
+  expect(FACTORY_VISIT_STOPS.at(-1)?.tag).toBe('LOGI-701');
+  expect(new Set(FACTORY_VISIT_STOPS.map((stop) => stop.tag)).size)
+    .toBe(FACTORY_VISIT_STOPS.length);
+  expect(FACTORY_VISIT_STOPS.every((stop) => stop.guide.length > 0)).toBe(true);
 });
 
 test('every static scenario uses approved tools and focuses equipment', () => {

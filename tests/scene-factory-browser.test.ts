@@ -1,6 +1,12 @@
 import { expect } from '#test-expect';
 import { test } from 'node:test';
-import { ICEBasicMaterial, ICEBoxGeometry, ICEMesh, ICEScene } from 'ice3';
+import {
+  ICEBasicMaterial,
+  ICEBoxGeometry,
+  ICEMesh,
+  ICEPerspectiveCamera,
+  ICEScene,
+} from 'ice3';
 import { FACTORY_EQUIPMENT } from '../shared/factory.ts';
 import {
   addBodyLoadingStation,
@@ -10,6 +16,7 @@ import {
   addEndOfLineTestStation,
   addFinishedVehicleDockStation,
   addFrameAssemblyStation,
+  addFactoryVisitor,
   addGlassDoorInstallStation,
   addMainConveyorStation,
   addPaintBoothStation,
@@ -30,8 +37,11 @@ import {
   createDryingOvenMotion,
   createEndOfLineTestMotion,
   createFinishedVehicleDockMotion,
+  createFactoryVisitController,
   createFrameAssemblyMotion,
   createGlassDoorInstallMotion,
+  factoryVisitMovementDirection,
+  findFactoryVisitNode,
   createPaintBoothMotion,
   createPowertrainInstallMotion,
   createPressStationMotion,
@@ -44,6 +54,7 @@ import {
   createWeldingRobotMotion,
   productionStageRoute,
   updateFactoryAmbientVisual,
+  updateFactoryVisitorVisual,
 } from '../src/scene/factory-browser.ts';
 
 test('BODY-101 visual parts preserve the equipment selection identity', () => {
@@ -534,4 +545,110 @@ test('factory ambient motion animates signals, cranes, utility caps, and inspect
   expect(cap.toJSON().matrix).toBeDefined();
   expect(steam.toJSON().matrix).toBeDefined();
   expect(scan.toJSON().matrix).toBeDefined();
+});
+
+test('factory visitor is a visible walking character with a reversible stride pose', () => {
+  const scene = new ICEScene({ id: 'test-scene' });
+  const visitor = addFactoryVisitor(scene);
+
+  expect(visitor.root.children).toHaveLength(11);
+  expect(visitor.root.displayName).toBe('参观者');
+  updateFactoryVisitorVisual(visitor, 0.2);
+  expect(visitor.root.toJSON().matrix).toBeDefined();
+  expect(visitor.leftArm.toJSON().matrix).toBeDefined();
+  expect(visitor.rightLeg.toJSON().matrix).toBeDefined();
+
+  visitor.root.clearLocalMatrix();
+  visitor.leftArm.clearLocalMatrix();
+  visitor.rightArm.clearLocalMatrix();
+  visitor.leftLeg.clearLocalMatrix();
+  visitor.rightLeg.clearLocalMatrix();
+  expect(visitor.root.toJSON().matrix).toBeUndefined();
+  expect(visitor.leftArm.toJSON().matrix).toBeUndefined();
+});
+
+test('factory visit controller keeps reverse movement stable across frames', () => {
+  const listeners = new Map<string, Set<(event: unknown) => void>>();
+  const fakeEngine = {
+    on(type: string, listener: (event: unknown) => void) {
+      const entries = listeners.get(type) ?? new Set();
+      entries.add(listener);
+      listeners.set(type, entries);
+      return this;
+    },
+    off(type: string, listener: (event: unknown) => void) {
+      listeners.get(type)?.delete(listener);
+      return this;
+    },
+    requestRender() {
+      return this;
+    },
+  };
+  const emit = (type: string, event: unknown): void => {
+    for (const listener of listeners.get(type) ?? []) listener(event);
+  };
+  let queuedFrame: ((timestamp: number) => void) | null = null;
+  const previousRequestAnimationFrame = globalThis.requestAnimationFrame;
+  const previousCancelAnimationFrame = globalThis.cancelAnimationFrame;
+  globalThis.requestAnimationFrame = (callback) => {
+    queuedFrame = callback;
+    return 1;
+  };
+  globalThis.cancelAnimationFrame = () => {
+    queuedFrame = null;
+  };
+  try {
+    const scene = new ICEScene({ id: 'test-scene' });
+    const visitor = addFactoryVisitor(scene);
+    const camera = new ICEPerspectiveCamera({
+      id: 'test-camera',
+      fov: 45,
+      near: 0.1,
+      far: 100,
+      position: [24, 3, 4],
+      target: [18, 0.65, 4],
+    });
+    const controller = createFactoryVisitController(
+      fakeEngine as never,
+      camera,
+      visitor,
+    );
+    controller.start();
+    const startX = camera.getTarget().x;
+    emit('KEY_DOWN', { param: { event: { code: 'KeyS' } } });
+    const firstFrame = queuedFrame as unknown as (timestamp: number) => void;
+    firstFrame(16);
+    const firstX = camera.getTarget().x;
+    const secondFrame = queuedFrame as unknown as (timestamp: number) => void;
+    secondFrame(32);
+    const secondX = camera.getTarget().x;
+
+    expect(firstX).toBeGreaterThan(startX);
+    expect(secondX).toBeGreaterThan(firstX);
+    controller.dispose();
+  } finally {
+    globalThis.requestAnimationFrame = previousRequestAnimationFrame;
+    globalThis.cancelAnimationFrame = previousCancelAnimationFrame;
+  }
+});
+
+test('factory visit strafe directions match the camera screen', () => {
+  const heading = -Math.PI / 2;
+  const right = factoryVisitMovementDirection(heading, 0, 1);
+  const left = factoryVisitMovementDirection(heading, 0, -1);
+
+  expect(right[0]).toBeCloseTo(0);
+  expect(right[1]).toBeLessThan(0);
+  expect(left[0]).toBeCloseTo(0);
+  expect(left[1]).toBeGreaterThan(0);
+});
+
+test('factory visit resolves the nearest node when the visitor reaches its radius', () => {
+  const nodes = [
+    { tag: 'A', position: [4, -0.5, 2] as const, radius: 2 },
+    { tag: 'B', position: [8, -0.5, 2] as const, radius: 2 },
+  ];
+
+  expect(findFactoryVisitNode(nodes, [4.8, -0.5, 2])?.tag).toBe('A');
+  expect(findFactoryVisitNode(nodes, [6, -0.5, 5])).toBeUndefined();
 });

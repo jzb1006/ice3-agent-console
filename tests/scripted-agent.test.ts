@@ -43,6 +43,19 @@ test('starts the complete production flow from a natural-language request', asyn
   ))).toBe(true);
 });
 
+test('starts a manual factory visit without auto-advancing nodes', async () => {
+  const events = [];
+  for await (const event of createScriptedAgent({ delayMs: 0 }).run(
+    input('开始厂房参观任务'),
+  )) {
+    events.push(event);
+  }
+
+  expect(events.some((event) => event.type === EventType.TEXT_MESSAGE_CONTENT
+    && String(event.delta).includes('自由走动'))).toBe(true);
+  expect(events.some((event) => event.type === EventType.TOOL_CALL_START)).toBe(false);
+});
+
 test('plays a multi-stop guided tour for opening autoplay', async () => {
   const request = input('带我看一下整个汽车制造工厂');
   request.context = [{
