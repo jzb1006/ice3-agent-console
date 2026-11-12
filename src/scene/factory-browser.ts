@@ -45,6 +45,7 @@ export interface FactoryAmbientVisual {
   readonly signalLights: readonly ICEMesh[];
   readonly craneTrolleys: readonly ICEMesh[];
   readonly utilityCaps: readonly ICEMesh[];
+  readonly steamPuffs: readonly ICEMesh[];
   readonly inspectionScan: ICEMesh;
 }
 
@@ -162,6 +163,7 @@ function mesh(
     selectionId?: string;
     metadata?: Readonly<Record<string, unknown>>;
     edgeColor?: string;
+    shading?: 'directional' | 'flat' | 'water';
   }> = {},
 ): ICEMesh {
   return new ICEMesh({
@@ -178,7 +180,7 @@ function mesh(
     material: new ICEBasicMaterial({
       color,
       edgeColor: options.edgeColor ?? '#b7d8d1',
-      shading: 'directional',
+      shading: options.shading ?? 'directional',
     }),
   });
 }
@@ -191,10 +193,11 @@ function addFactoryDecor(scene: ICEScene): FactoryAmbientVisual {
   const signalLights: ICEMesh[] = [];
   const craneTrolleys: ICEMesh[] = [];
   const utilityCaps: ICEMesh[] = [];
+  const steamPuffs: ICEMesh[] = [];
 
-  scene.addChild(mesh('factory-floor', [82, 0.2, 42], [0, -0.7, 0], floor, { edgeColor: '#3b6667' }));
-  scene.addChild(mesh('courtyard-slab', [34, 0.08, 18], [0, -0.57, 2], '#2c4648', { edgeColor: '#5d8580' }));
-  scene.addChild(mesh('courtyard-shadow', [28, 0.04, 12], [0, -0.5, 2], '#1b3035', { edgeColor: '#365b5b' }));
+  scene.addChild(mesh('factory-floor', [82, 0.2, 42], [0, -0.7, 0], floor, { edgeColor: '#3b6667', shading: 'flat' }));
+  scene.addChild(mesh('courtyard-slab', [34, 0.08, 18], [0, -0.57, 2], '#2c4648', { edgeColor: '#5d8580', shading: 'flat' }));
+  scene.addChild(mesh('courtyard-shadow', [28, 0.04, 12], [0, -0.5, 2], '#1b3035', { edgeColor: '#365b5b', shading: 'flat' }));
 
   // Low factory halls frame the route without turning the whole scene into a tunnel.
   scene.addChild(mesh('press-hall-wall', [30, 4.4, 0.7], [-18, 1.55, -16.2], '#324c50', { edgeColor: '#6f928d' }));
@@ -203,6 +206,20 @@ function addFactoryDecor(scene: ICEScene): FactoryAmbientVisual {
   scene.addChild(mesh('paint-hall-roof', [33, 0.45, 4], [11, 4.45, -8.8], '#53615b', { edgeColor: '#a1ae92' }));
   scene.addChild(mesh('quality-hall-wall', [32, 4.2, 0.7], [-15, 1.45, 16.1], '#344853', { edgeColor: '#78929a' }));
   scene.addChild(mesh('quality-hall-roof', [33, 0.45, 4], [-15, 3.95, 14.6], '#465866', { edgeColor: '#8fa9af' }));
+
+  // Window bands and louvers give the low halls a readable architectural skin.
+  for (const [index, x] of [-29, -24, -19, -14, -9, -4].entries()) {
+    scene.addChild(mesh(`press-window-${index}`, [3.4, 1.05, 0.16], [x, 2.35, -15.8], '#5e8589', { edgeColor: '#b7ddd1', shading: 'flat' }));
+  }
+  for (const [index, x] of [0, 6, 12, 18, 24].entries()) {
+    scene.addChild(mesh(`paint-louver-${index}`, [3.5, 1.35, 0.16], [x, 2.45, -9.78], '#477270', { edgeColor: '#a3d0bc', shading: 'flat' }));
+  }
+  for (const [index, x] of [-27, -21, -15, -9, -3].entries()) {
+    scene.addChild(mesh(`quality-window-${index}`, [3.8, 0.95, 0.16], [x, 2.25, 15.7], '#536c7b', { edgeColor: '#b0d4d9', shading: 'flat' }));
+  }
+  for (const [index, x] of [-23, -13, -3, 7, 17].entries()) {
+    scene.addChild(mesh(`roof-skylight-${index}`, [5.5, 0.08, 0.9], [x, 4.38, -14.4], '#7faeaa', { edgeColor: '#d2f0df', shading: 'flat' }));
+  }
 
   // A stepped pipe bridge makes the central yard read as a real industrial district.
   for (const [index, x] of [-12, -4, 4, 12, 20].entries()) {
@@ -226,7 +243,7 @@ function addFactoryDecor(scene: ICEScene): FactoryAmbientVisual {
 
   // Short floor tracks and hazard lanes make the route legible from the overview camera.
   const lane = (id: string, size: readonly [number, number, number], position: LayoutPosition): void => {
-    scene.addChild(mesh(id, size, position, hazard, { edgeColor: '#ffe994' }));
+    scene.addChild(mesh(id, size, position, hazard, { edgeColor: '#ffe994', shading: 'flat' }));
   };
   lane('lane-west', [0.18, 0.04, 21], [-35.5, -0.56, 0]);
   lane('lane-east', [0.18, 0.04, 21], [35.5, -0.56, 0]);
@@ -234,6 +251,19 @@ function addFactoryDecor(scene: ICEScene): FactoryAmbientVisual {
   lane('lane-south', [68, 0.04, 0.18], [0, -0.56, -13.2]);
   lane('yard-lane-left', [0.16, 0.04, 13], [-16.5, -0.5, 2]);
   lane('yard-lane-right', [0.16, 0.04, 13], [16.5, -0.5, 2]);
+  for (const [index, x] of [-30, -24, -18, -12, -6, 0, 6, 12, 18, 24, 30].entries()) {
+    scene.addChild(mesh(`yard-chevron-${index}`, [2.2, 0.035, 0.16], [x, -0.49, 5.9], '#b8953e', { edgeColor: '#f3d879', shading: 'flat' }));
+  }
+
+  // Guardrails and bollards establish safe pedestrian and maintenance boundaries.
+  for (const [index, x] of [-15.5, -12.5, 12.5, 15.5].entries()) {
+    scene.addChild(mesh(`yard-guardrail-post-${index}`, [0.18, 1.15, 0.18], [x, 0.05, 6.8], '#d1a83d', { edgeColor: '#ffe68b' }));
+  }
+  scene.addChild(mesh('yard-guardrail-near', [7, 0.16, 0.16], [-14, 0.72, 6.8], '#b6c4b5', { edgeColor: '#efffe9' }));
+  scene.addChild(mesh('yard-guardrail-far', [7, 0.16, 0.16], [14, 0.72, 6.8], '#b6c4b5', { edgeColor: '#efffe9' }));
+  for (const [index, position] of [[-34, -4], [-34, 4], [34, -4], [34, 4] ] as const) {
+    scene.addChild(mesh(`bollard-${index}-${position}`, [0.45, 0.95, 0.45], [index, -0.05, position], '#d49a43', { edgeColor: '#ffe19a' }));
+  }
 
   // Inspection portal, finished-goods dock, and service blocks are intentionally asymmetrical.
   scene.addChild(mesh('inspection-portal-left', [0.65, 6.2, 0.65], [0, 2.4, 6.2], '#6f638e', { edgeColor: '#c1b4ef' }));
@@ -255,6 +285,12 @@ function addFactoryDecor(scene: ICEScene): FactoryAmbientVisual {
   for (const [index, x] of [-27, -21, 21, 27].entries()) {
     scene.addChild(mesh(`logistics-pallet-${index}`, [2.8, 0.35, 2.2], [x, -0.28, -1.3], '#7b6045', { edgeColor: '#b9986f' }));
     scene.addChild(mesh(`logistics-crate-${index}`, [2.2, 1.5, 1.7], [x, 0.65, -1.3], '#b17a43', { edgeColor: '#e2b778' }));
+  }
+  for (const [index, x] of [-12, 4, 20].entries()) {
+    scene.addChild(mesh(`yard-forklift-body-${index}`, [2.1, 0.55, 1.25], [x, -0.02, 2.7], '#c37a3e', { edgeColor: '#f4c17d' }));
+    scene.addChild(mesh(`yard-forklift-cabin-${index}`, [1.1, 1.25, 0.95], [x + 0.25, 0.82, 2.7], '#566c70', { edgeColor: '#b7d9cd' }));
+    scene.addChild(mesh(`yard-forklift-mast-${index}`, [0.16, 2.1, 0.16], [x - 0.78, 0.75, 2.7], '#c7b55e', { edgeColor: '#fff0a7' }));
+    scene.addChild(mesh(`yard-forklift-fork-${index}`, [0.9, 0.12, 0.14], [x - 1.2, -0.05, 2.7], '#d7c978', { edgeColor: '#fff1ae' }));
   }
 
   // V2 polish: color-coded gateways make the three process districts legible before
@@ -284,14 +320,19 @@ function addFactoryDecor(scene: ICEScene): FactoryAmbientVisual {
     const cap = mesh(`utility-stack-cap-${index}`, [1.1, 0.3, 1.1], [x, 7.85, -17.1], '#bb8148', { edgeColor: '#f1c27d' });
     utilityCaps.push(cap);
     scene.addChild(cap);
+    for (const puff of [0, 1, 2]) {
+      const steam = mesh(`utility-steam-${index}-${puff}`, [0.5, 0.42, 0.5], [x, 8.25 + puff * 0.65, -17.1], '#9ebdb5', { edgeColor: '#d9efe0', shading: 'water' });
+      steamPuffs.push(steam);
+      scene.addChild(steam);
+    }
   }
   scene.addChild(mesh('utility-pipe-run', [16, 0.42, 0.42], [23, 5.45, -14.2], '#7b8171', { edgeColor: '#d0cc9d' }));
 
   // Segmented paving breaks up the single floor plane and reinforces the traffic hierarchy.
-  scene.addChild(mesh('body-district-paving', [30, 0.04, 3.8], [-18, -0.51, -12.6], '#365259', { edgeColor: '#668b89' }));
-  scene.addChild(mesh('paint-district-paving', [32, 0.04, 3.8], [11, -0.51, -5.6], '#3d5655', { edgeColor: '#76958c' }));
-  scene.addChild(mesh('quality-district-paving', [34, 0.04, 3.8], [-14, -0.51, 12.6], '#3c4e5b', { edgeColor: '#7891a0' }));
-  return { signalLights, craneTrolleys, utilityCaps, inspectionScan };
+  scene.addChild(mesh('body-district-paving', [30, 0.04, 3.8], [-18, -0.51, -12.6], '#365259', { edgeColor: '#668b89', shading: 'flat' }));
+  scene.addChild(mesh('paint-district-paving', [32, 0.04, 3.8], [11, -0.51, -5.6], '#3d5655', { edgeColor: '#76958c', shading: 'flat' }));
+  scene.addChild(mesh('quality-district-paving', [34, 0.04, 3.8], [-14, -0.51, 12.6], '#3c4e5b', { edgeColor: '#7891a0', shading: 'flat' }));
+  return { signalLights, craneTrolleys, utilityCaps, steamPuffs, inspectionScan };
 }
 
 export function addBodyLoadingStation(
@@ -1427,6 +1468,8 @@ export function createFactoryAmbientMotion(
   let frame: number | null = null;
   let disposed = false;
   const startedAt = performance.now();
+  const reducedMotion = typeof window !== 'undefined'
+    && (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
 
   const tick = (): void => {
     if (disposed) return;
@@ -1438,7 +1481,13 @@ export function createFactoryAmbientMotion(
 
   return {
     start(): void {
-      if (frame === null && !disposed) tick();
+      if (disposed || frame !== null) return;
+      if (reducedMotion) {
+        updateFactoryAmbientVisual(visual, 0);
+        engine.requestRender('factory-ambient-static');
+        return;
+      }
+      tick();
     },
     dispose(): void {
       disposed = true;
@@ -1447,6 +1496,10 @@ export function createFactoryAmbientMotion(
       visual.signalLights.forEach((signal) => { signal.visible = true; });
       visual.craneTrolleys.forEach((trolley) => trolley.clearLocalMatrix());
       visual.utilityCaps.forEach((cap) => cap.clearLocalMatrix());
+      visual.steamPuffs.forEach((puff) => {
+        puff.visible = true;
+        puff.clearLocalMatrix();
+      });
       visual.inspectionScan.clearLocalMatrix();
     },
   };
@@ -1465,6 +1518,13 @@ export function updateFactoryAmbientVisual(visual: FactoryAmbientVisual, elapsed
     const base = cap.position;
     const lift = Math.abs(Math.sin(elapsed * 0.8 + index * 0.9)) * 0.22;
     cap.setLocalMatrix(translationMatrix(base.x, base.y + lift, base.z));
+  });
+  visual.steamPuffs.forEach((puff, index) => {
+    const base = puff.position;
+    const phase = (elapsed * 0.42 + index * 0.31) % 1;
+    const drift = Math.sin(elapsed * 1.1 + index) * 0.18;
+    puff.visible = phase < 0.88;
+    puff.setLocalMatrix(translationMatrix(base.x + drift, base.y + phase * 1.8, base.z));
   });
   const scanBase = visual.inspectionScan.position;
   const scanOffset = Math.sin(elapsed * 1.4) * 1.8;
@@ -2532,11 +2592,18 @@ export async function createFactorySceneController(
   };
   const overviewCenter = center(overviewBounds);
   const overviewRadius = radius(overviewBounds);
+  // Keep the floor and its process landmarks in the visual center of the wide
+  // overview canvas; the low target also leaves the architectural skyline visible.
+  const overviewTarget: readonly [number, number, number] = [
+    overviewCenter[0],
+    overviewBounds.min[1] - 2.5,
+    overviewCenter[2] + 0.5,
+  ];
   const overview: CameraPose = {
-    target: overviewCenter,
+    target: overviewTarget,
     position: [
       overviewCenter[0] + overviewRadius * 1.05,
-      overviewCenter[1] + overviewRadius * 0.9,
+      overviewCenter[1] + overviewRadius * 0.62,
       overviewCenter[2] + overviewRadius * 1.15,
     ],
   };

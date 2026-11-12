@@ -518,17 +518,20 @@ test('factory ambient motion animates signals, cranes, utility caps, and inspect
   const signal = createFixture('ambient-signal');
   const trolley = createFixture('ambient-trolley');
   const cap = createFixture('ambient-cap');
+  const steam = createFixture('ambient-steam');
   const scan = createFixture('ambient-scan');
 
   updateFactoryAmbientVisual({
     signalLights: [signal],
     craneTrolleys: [trolley],
     utilityCaps: [cap],
+    steamPuffs: [steam],
     inspectionScan: scan,
   }, 0.7);
 
   expect(signal.visible).toBe(true);
   expect(trolley.toJSON().matrix).toBeDefined();
   expect(cap.toJSON().matrix).toBeDefined();
+  expect(steam.toJSON().matrix).toBeDefined();
   expect(scan.toJSON().matrix).toBeDefined();
 });
