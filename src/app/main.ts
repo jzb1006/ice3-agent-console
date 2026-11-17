@@ -2,8 +2,12 @@ import type { EquipmentSummary } from '../../shared/scene.js';
 import { DEMO_ASSET } from '../../shared/demo-asset.js';
 import {
   FACTORY_VISIT_STOPS,
+  arriveAtFactoryVisitStop,
+  createFactoryVisitMissionState,
+  factoryVisitMissionProgress,
   matchFactoryScenario,
   type FactoryScenario,
+  type FactoryVisitMissionState,
 } from '../../shared/factory-scenarios.js';
 import { ChatPanel } from '../view/chat-panel.js';
 import { EquipmentCard } from '../view/equipment-card.js';
@@ -33,7 +37,8 @@ const FACTORY_VISIT_CONTROLS = Object.freeze([
   { label: '移动', value: 'W A S D / 方向键' },
   { label: '观察', value: '拖动鼠标' },
   { label: '镜头', value: '滚轮远近' },
-  { label: '查看', value: '点击节点' },
+  { label: '冲刺', value: 'Shift' },
+  { label: '发现', value: '靠近节点' },
   { label: '退出', value: '快捷操作' },
 ] as const);
 
@@ -87,6 +92,7 @@ export async function startConsole(host: HTMLElement): Promise<void> {
   let enterFactoryVisit: (() => Promise<void>) | null = null;
   let exitFactoryVisit: (() => Promise<void>) | null = null;
   let handleVisitNode: ((selectionId: string) => void) | null = null;
+  let visitMission: FactoryVisitMissionState = createFactoryVisitMissionState();
   const scenarioFocusSteps = (): readonly FactoryScenario['steps'][number][] => (
     activeScenario?.steps.filter((step) => step.tool.name === 'focus_equipment') ?? []
   );
@@ -232,17 +238,29 @@ export async function startConsole(host: HTMLElement): Promise<void> {
         ? FACTORY_VISIT_STOPS.findIndex((stop) => stop.tag === tag)
         : -1;
       const stop = index >= 0 ? FACTORY_VISIT_STOPS[index]! : fallback;
+      const progress = factoryVisitMissionProgress(visitMission);
+      const completedStages = visitMission.visitedTags.flatMap((visitedTag) => {
+        const visitedIndex = FACTORY_VISIT_STOPS.findIndex((item) => item.tag === visitedTag);
+        return visitedIndex >= 0 ? [visitedIndex + 1] : [];
+      });
       const target = record ?? scene.records().find((item) => item.metadata?.equipmentTag === fallback.tag);
       stage.tour.update({
         eyebrow: '厂房参观',
-        title: '厂房参观任务',
-        stageIndex: index >= 0 ? index + 1 : 0,
+        title: progress.complete ? '参观任务完成' : '厂房参观任务',
+        stageIndex: progress.visited,
         stageCount: FACTORY_VISIT_STOPS.length,
+        objective: progress.complete ? '全部关键工位已发现' : '发现并了解关键工位',
+        objectiveProgress: `已发现 ${progress.visited} / ${progress.total}`,
+        completedStages,
         equipmentName: target
           ? index >= 0 ? target.name : `建议前往：${target.name}`
           : '建议前往下一个节点',
         processStage: target?.metadata?.processStage as string | undefined ?? '自由行走',
+        interaction: progress.complete
+          ? '参观完成 · 可继续自由探索厂房'
+          : index >= 0 ? '节点已发现 · 可继续自由移动' : '靠近发光节点即可发现新的工位',
         controls: FACTORY_VISIT_CONTROLS,
+        completed: progress.complete,
         detail: index >= 0
           ? `${stop.guide} 参观者可自行继续移动，不会自动跳转。`
           : `自由行走：使用 W/A/S/D 或方向键移动，拖动鼠标转向，滚轮调整镜头远近；${stop.guide}`,
@@ -250,20 +268,32 @@ export async function startConsole(host: HTMLElement): Promise<void> {
     };
     handleVisitNode = (selectionId): void => {
       if (!factoryVisitActive) return;
+      const record = scene.records().find((item) => item.selectionId === selectionId);
+      const tag = typeof record?.metadata?.equipmentTag === 'string'
+        ? record.metadata.equipmentTag
+        : undefined;
+      if (tag) visitMission = arriveAtFactoryVisitStop(visitMission, tag);
       scene.setSelection([selectionId]);
       session?.setSelectedEquipment(selectionId);
       updateFactoryVisitGuide(selectionId);
-      const record = scene.records().find((item) => item.selectionId === selectionId);
-      status.set(`已到达参观节点：${record?.name ?? '当前工位'}`);
+      const progress = factoryVisitMissionProgress(visitMission);
+      status.set(progress.complete
+        ? '参观任务完成：已发现全部关键工位'
+        : `已到达参观节点：${record?.name ?? '当前工位'}`);
     };
     enterFactoryVisit = async (): Promise<void> => {
       factoryVisitActive = true;
       activeScenario = null;
+      visitMission = createFactoryVisitMissionState();
+      chat.setCollapsed(true);
       stage.tour.update({
         eyebrow: '厂房参观',
         title: '厂房参观任务',
         stageIndex: 0,
         stageCount: FACTORY_VISIT_STOPS.length,
+        objective: '发现并了解关键工位',
+        objectiveProgress: `已发现 0 / ${FACTORY_VISIT_STOPS.length}`,
+        interaction: '靠近发光节点即可发现新的工位',
         equipmentName: '准备进入厂房',
         processStage: '自由行走',
         controls: FACTORY_VISIT_CONTROLS,
@@ -274,6 +304,8 @@ export async function startConsole(host: HTMLElement): Promise<void> {
     };
     exitFactoryVisit = async (): Promise<void> => {
       factoryVisitActive = false;
+      visitMission = createFactoryVisitMissionState();
+      chat.setCollapsed(false);
       stage.tour.hide();
       scene.setSelection([]);
       session?.setSelectedEquipment(null);
@@ -291,6 +323,13 @@ export async function startConsole(host: HTMLElement): Promise<void> {
     });
     scene.onSelection((ids) => {
       if (factoryVisitActive) {
+        const selectedRecord = ids[0]
+          ? scene.records().find((item) => item.selectionId === ids[0])
+          : undefined;
+        const selectedTag = typeof selectedRecord?.metadata?.equipmentTag === 'string'
+          ? selectedRecord.metadata.equipmentTag
+          : undefined;
+        if (selectedTag) visitMission = arriveAtFactoryVisitStop(visitMission, selectedTag);
         session?.setSelectedEquipment(ids[0] ?? null);
         updateFactoryVisitGuide(ids[0] ?? null);
         session?.notifyUserSceneIntent();
@@ -306,6 +345,11 @@ export async function startConsole(host: HTMLElement): Promise<void> {
       onSelect: async (entry) => {
         if (factoryVisitActive) {
           try {
+            const selectedRecord = scene.records().find((item) => item.selectionId === entry.selectionId);
+            const selectedTag = typeof selectedRecord?.metadata?.equipmentTag === 'string'
+              ? selectedRecord.metadata.equipmentTag
+              : undefined;
+            if (selectedTag) visitMission = arriveAtFactoryVisitStop(visitMission, selectedTag);
             scene.setSelection([entry.selectionId]);
             session?.setSelectedEquipment(entry.selectionId);
             updateFactoryVisitGuide(entry.selectionId);

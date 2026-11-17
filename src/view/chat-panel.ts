@@ -133,13 +133,7 @@ export class ChatPanel {
     )!;
     toggle.addEventListener('click', () => {
       const collapsed = this.element.dataset.collapsed !== 'true';
-      this.element.dataset.collapsed = String(collapsed);
-      toggle.setAttribute('aria-expanded', String(!collapsed));
-      toggle.setAttribute(
-        'aria-label',
-        collapsed ? '展开对话面板' : '收起对话面板',
-      );
-      toggle.textContent = collapsed ? '‹' : '›';
+      this.setCollapsed(collapsed);
     });
     this.form.addEventListener('submit', (event) => {
       event.preventDefault();
@@ -211,6 +205,19 @@ export class ChatPanel {
       .textContent = mode === 'scripted' ? '剧本模式' : '模型模式';
     this.element.querySelector<HTMLElement>('[data-role="agent-transport"]')!
       .textContent = transport === 'server' ? '服务端' : '纯前端';
+  }
+
+  setCollapsed(collapsed: boolean): void {
+    const toggle = this.element.querySelector<HTMLButtonElement>(
+      '[data-role="conversation-toggle"]',
+    );
+    this.element.dataset.collapsed = String(collapsed);
+    toggle?.setAttribute('aria-expanded', String(!collapsed));
+    toggle?.setAttribute(
+      'aria-label',
+      collapsed ? '展开对话面板' : '收起对话面板',
+    );
+    if (toggle) toggle.textContent = collapsed ? '‹' : '›';
   }
 
   setError(message: string | null): void {

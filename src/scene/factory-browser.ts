@@ -59,6 +59,7 @@ export interface FactoryVisitorVisual {
   readonly rightLeg: ICEMesh;
   readonly path: readonly LayoutPosition[];
   readonly nodes: readonly FactoryVisitNode[];
+  readonly nodeMarkers: readonly ICEMesh[];
 }
 
 export interface FactoryVisitNode {
@@ -381,6 +382,17 @@ export function addFactoryVisitor(scene: ICEScene): FactoryVisitorVisual {
       radius: 2.6,
     }];
   });
+  const nodeMarkers = nodes.map((node) => {
+    const marker = mesh(
+      `factory-visit-marker-${node.tag}`,
+      [0.72, 0.08, 0.72],
+      node.position,
+      '#d7b84c',
+      { edgeColor: '#fff0a1', shading: 'flat' },
+    );
+    scene.addChild(marker);
+    return marker;
+  });
   root.visible = false;
   const part = (
     id: string,
@@ -405,7 +417,7 @@ export function addFactoryVisitor(scene: ICEScene): FactoryVisitorVisual {
   part('factory-visitor-left-shoe', [0.25, 0.12, 0.42], [-0.16, 0.02, -0.08], '#17272b', '#6f9695');
   part('factory-visitor-right-shoe', [0.25, 0.12, 0.42], [0.16, 0.02, -0.08], '#17272b', '#6f9695');
   scene.addChild(root);
-  return { root, leftArm, rightArm, leftLeg, rightLeg, path, nodes };
+  return { root, leftArm, rightArm, leftLeg, rightLeg, path, nodes, nodeMarkers };
 }
 
 export function addBodyLoadingStation(
@@ -1597,6 +1609,7 @@ export function createFactoryAmbientMotion(
         visual.visitor.rightArm.clearLocalMatrix();
         visual.visitor.leftLeg.clearLocalMatrix();
         visual.visitor.rightLeg.clearLocalMatrix();
+        visual.visitor.nodeMarkers.forEach((marker) => marker.clearLocalMatrix());
       }
     },
   };
@@ -1626,6 +1639,11 @@ export function updateFactoryAmbientVisual(visual: FactoryAmbientVisual, elapsed
   const scanBase = visual.inspectionScan.position;
   const scanOffset = Math.sin(elapsed * 1.4) * 1.8;
   visual.inspectionScan.setLocalMatrix(translationMatrix(scanBase.x + scanOffset, scanBase.y, scanBase.z));
+  visual.visitor?.nodeMarkers.forEach((marker, index) => {
+    const base = marker.position;
+    const lift = 0.03 + Math.abs(Math.sin(elapsed * 2.2 + index * 0.37)) * 0.08;
+    marker.setLocalMatrix(translationMatrix(base.x, base.y + lift, base.z));
+  });
 }
 
 export function applyFactoryVisitorPose(
@@ -1743,6 +1761,7 @@ export function createFactoryVisitController(
   let active = false;
   let disposed = false;
   let activeNodeTag: string | null = null;
+  let movementIntensity = 0;
 
   const clamp = (value: number, min: number, max: number): number => (
     Math.min(max, Math.max(min, value))
@@ -1761,7 +1780,7 @@ export function createFactoryVisitController(
   };
   const onKeyDown = (event: { readonly param?: { readonly event?: { readonly code?: string } } }): void => {
     const code = event.param?.event?.code;
-    if (code && /^(Key[WASD]|Arrow(Up|Down|Left|Right))$/.test(code)) {
+    if (code && /^(Key[WASD]|Arrow(Up|Down|Left|Right)|Shift(Left|Right))$/.test(code)) {
       pressedKeys.add(code);
     }
   };
@@ -1821,9 +1840,13 @@ export function createFactoryVisitController(
     const strafe = Number(pressedKeys.has('KeyD') || pressedKeys.has('ArrowRight'))
       - Number(pressedKeys.has('KeyA') || pressedKeys.has('ArrowLeft'));
     const magnitude = Math.hypot(forward, strafe);
+    movementIntensity = magnitude > 0
+      ? Math.min(1, movementIntensity + deltaSeconds * 8)
+      : Math.max(0, movementIntensity - deltaSeconds * 10);
     if (magnitude > 0) {
       const [directionX, directionZ] = factoryVisitMovementDirection(heading, forward, strafe);
-      const speed = 4.2 * deltaSeconds;
+      const sprinting = pressedKeys.has('ShiftLeft') || pressedKeys.has('ShiftRight');
+      const speed = 4.2 * (sprinting ? 1.55 : 1) * movementIntensity * deltaSeconds;
       const nextPosition: LayoutPosition = [
         clamp(position[0] + directionX * speed, bounds.minX, bounds.maxX),
         position[1],
@@ -1859,7 +1882,7 @@ export function createFactoryVisitController(
         updateVisitor(0);
         onNodeReached?.(reachedNode);
       } else {
-        updateVisitor(Math.sin(now / 1_000 * 10) * 0.42);
+        updateVisitor(Math.sin(now / 1_000 * 10) * 0.42 * movementIntensity);
       }
     } else {
       updateVisitor(0);
@@ -1876,6 +1899,7 @@ export function createFactoryVisitController(
     distance = 7;
     pressedKeys.clear();
     activeNodeTag = null;
+    movementIntensity = 0;
     updateVisitor(0);
     updateCamera();
   };

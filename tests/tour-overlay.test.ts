@@ -12,13 +12,17 @@ test('renders the active production tour with stage progress', () => {
     title: '整车生产流',
     stageIndex: 3,
     stageCount: 5,
+    objective: '发现并了解关键工位',
+    objectiveProgress: '已发现 2 / 5',
     equipmentName: '车身焊装机器人岛',
     processStage: '车身焊装',
+    interaction: '节点已发现 · 可继续自由移动',
     controls: [
       { label: '移动', value: 'W A S D' },
       { label: '查看', value: '点击节点' },
     ],
     detail: '当前工位正在完成结构连接。',
+    completedStages: [1, 2],
   });
 
   expect(overlay.element.hidden).toBe(false);
@@ -29,6 +33,12 @@ test('renders the active production tour with stage progress', () => {
     .toBe('03 / 05');
   expect(overlay.element.querySelector('[data-role="tour-equipment"]')?.textContent)
     .toBe('车身焊装机器人岛');
+  expect(overlay.element.querySelector('[data-role="tour-objective"]')?.textContent)
+    .toBe('发现并了解关键工位');
+  expect(overlay.element.querySelector('[data-role="tour-objective-progress"]')?.textContent)
+    .toBe('已发现 2 / 5');
+  expect(overlay.element.querySelector('[data-role="tour-interaction"]')?.textContent)
+    .toBe('节点已发现 · 可继续自由移动');
   expect(overlay.element.querySelectorAll('[data-role="tour-marker"]')).toHaveLength(5);
   expect(overlay.element.querySelectorAll('[data-role="tour-controls"] .tour-hud__control'))
     .toHaveLength(2);

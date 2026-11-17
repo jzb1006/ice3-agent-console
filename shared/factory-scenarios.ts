@@ -34,6 +34,11 @@ export interface FactoryVisitStop {
   readonly guide: string;
 }
 
+export interface FactoryVisitMissionState {
+  readonly visitedTags: readonly string[];
+  readonly currentTag: string | null;
+}
+
 export const FACTORY_VISIT_STOPS: readonly FactoryVisitStop[] = Object.freeze([
   { tag: 'PRESS-101', guide: '观察冲压机的上模与送料区，了解板材如何被成形为车身结构件。' },
   { tag: 'BODY-101', guide: '从这里开始参观白车身上料，托盘将冲压件交给主线。' },
@@ -55,6 +60,41 @@ export const FACTORY_VISIT_STOPS: readonly FactoryVisitStop[] = Object.freeze([
   { tag: 'ROAD-602', guide: '动态路试道验证车辆行驶、制动和转向表现。' },
   { tag: 'LOGI-701', guide: '成品物流月台是参观终点，合格车辆将在这里等待发运。' },
 ]);
+
+export function createFactoryVisitMissionState(): FactoryVisitMissionState {
+  return { visitedTags: [], currentTag: null };
+}
+
+export function arriveAtFactoryVisitStop(
+  state: FactoryVisitMissionState,
+  tag: string,
+): FactoryVisitMissionState {
+  if (!FACTORY_VISIT_STOPS.some((stop) => stop.tag === tag)) return state;
+  return {
+    visitedTags: state.visitedTags.includes(tag)
+      ? state.visitedTags
+      : [...state.visitedTags, tag],
+    currentTag: tag,
+  };
+}
+
+export function leaveFactoryVisitStop(
+  state: FactoryVisitMissionState,
+): FactoryVisitMissionState {
+  return state.currentTag === null
+    ? state
+    : { visitedTags: state.visitedTags, currentTag: null };
+}
+
+export function factoryVisitMissionProgress(
+  state: FactoryVisitMissionState,
+): { readonly visited: number; readonly total: number; readonly complete: boolean } {
+  const visited = state.visitedTags.filter((tag) => (
+    FACTORY_VISIT_STOPS.some((stop) => stop.tag === tag)
+  )).length;
+  const total = FACTORY_VISIT_STOPS.length;
+  return { visited, total, complete: visited === total };
+}
 
 const equipment = (tag: string): string => demoEquipmentSelectionId(tag);
 const focus = (tag: string): FactoryScenarioStep['tool'] => ({

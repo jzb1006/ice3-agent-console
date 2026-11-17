@@ -552,6 +552,7 @@ test('factory visitor is a visible walking character with a reversible stride po
   const visitor = addFactoryVisitor(scene);
 
   expect(visitor.root.children).toHaveLength(11);
+  expect(visitor.nodeMarkers).toHaveLength(19);
   expect(visitor.root.displayName).toBe('参观者');
   updateFactoryVisitorVisual(visitor, 0.2);
   expect(visitor.root.toJSON().matrix).toBeDefined();

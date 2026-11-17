@@ -119,22 +119,30 @@ test('guides a manual factory visit without auto-advancing or trapping the user'
   const tour = page.locator('[data-role="tour-hud"]');
   await expect(tour).toBeVisible({ timeout: 10_000 });
   await expect(tour.locator('[data-role="tour-controls"] .tour-hud__control'))
-    .toHaveCount(5);
+    .toHaveCount(6);
   await expect(tour.locator('[data-role="tour-controls"]'))
     .toContainText('W A S D / 方向键');
   await expect(tour.locator('[data-role="tour-controls"]'))
     .toContainText('滚轮远近');
+  await expect(tour.locator('[data-role="tour-objective"]'))
+    .toHaveText('发现并了解关键工位');
+  await expect(tour.locator('[data-role="tour-objective-progress"]'))
+    .toHaveText('已发现 0 / 19');
+  await expect(page.locator('.conversation-panel'))
+    .toHaveAttribute('data-collapsed', 'true');
 
   await page.getByRole('button', { name: /定位 车身冲压机 PRESS-101/ }).click();
   await expect(tour.locator('[data-role="tour-step"]')).toHaveText('01 / 19');
   await page.waitForTimeout(1_000);
   await expect(tour.locator('[data-role="tour-step"]')).toHaveText('01 / 19');
   await expect(tour.locator('[data-role="tour-controls"]'))
-    .toContainText('点击节点');
+    .toContainText('靠近节点');
 
   await page.getByRole('button', { name: '退出参观', exact: true }).click();
   await expect(tour).toBeHidden({ timeout: 10_000 });
   await expect(page.locator('#stage')).toHaveAttribute('data-tour-active', 'false');
+  await expect(page.locator('.conversation-panel'))
+    .toHaveAttribute('data-collapsed', 'false');
 });
 
 test('keeps the selected equipment highlighted during scenario playback', async ({

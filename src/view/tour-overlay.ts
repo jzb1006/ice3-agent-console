@@ -3,9 +3,13 @@ export interface TourOverlayUpdate {
   readonly title: string;
   readonly stageIndex: number;
   readonly stageCount: number;
+  readonly objective?: string;
+  readonly objectiveProgress?: string;
   readonly equipmentName?: string;
   readonly processStage?: string;
+  readonly interaction?: string;
   readonly controls?: readonly TourControlHint[];
+  readonly completedStages?: readonly number[];
   readonly detail: string;
   readonly completed?: boolean;
 }
@@ -30,8 +34,11 @@ export class TourOverlay {
   private readonly title: HTMLElement;
   private readonly eyebrow: HTMLElement;
   private readonly step: HTMLElement;
+  private readonly objective: HTMLElement;
+  private readonly objectiveProgress: HTMLElement;
   private readonly equipment: HTMLElement;
   private readonly process: HTMLElement;
+  private readonly interaction: HTMLElement;
   private readonly controls: HTMLElement;
   private readonly detail: HTMLElement;
   private readonly markers: HTMLElement;
@@ -50,9 +57,14 @@ export class TourOverlay {
         <h2 data-role="tour-title"></h2>
         <span data-role="tour-step"></span>
       </div>
+      <div class="tour-hud__objective">
+        <span data-role="tour-objective"></span>
+        <span data-role="tour-objective-progress"></span>
+      </div>
       <div class="tour-hud__markers" data-role="tour-markers"></div>
       <div class="tour-hud__equipment" data-role="tour-equipment"></div>
       <div class="tour-hud__process" data-role="tour-process"></div>
+      <div class="tour-hud__interaction" data-role="tour-interaction"></div>
       <div class="tour-hud__controls" data-role="tour-controls" aria-label="参观操作引导"></div>
       <p class="tour-hud__detail" data-role="tour-detail"></p>
     `;
@@ -60,8 +72,11 @@ export class TourOverlay {
     this.eyebrow = this.element.querySelector('.tour-hud__eyebrow')!;
     this.title = this.element.querySelector('[data-role="tour-title"]')!;
     this.step = this.element.querySelector('[data-role="tour-step"]')!;
+    this.objective = this.element.querySelector('[data-role="tour-objective"]')!;
+    this.objectiveProgress = this.element.querySelector('[data-role="tour-objective-progress"]')!;
     this.equipment = this.element.querySelector('[data-role="tour-equipment"]')!;
     this.process = this.element.querySelector('[data-role="tour-process"]')!;
+    this.interaction = this.element.querySelector('[data-role="tour-interaction"]')!;
     this.controls = this.element.querySelector('[data-role="tour-controls"]')!;
     this.detail = this.element.querySelector('[data-role="tour-detail"]')!;
     this.markers = this.element.querySelector('[data-role="tour-markers"]')!;
@@ -82,12 +97,18 @@ export class TourOverlay {
     this.eyebrow.textContent = update.eyebrow ?? '工艺导览';
     this.title.textContent = update.title;
     this.step.textContent = formatStep(index, count);
+    this.objective.textContent = update.objective ?? '';
+    this.objective.hidden = !update.objective;
+    this.objectiveProgress.textContent = update.objectiveProgress ?? '';
+    this.objectiveProgress.hidden = !update.objectiveProgress;
     this.equipment.textContent = update.completed
       ? '导览完成'
       : update.equipmentName ?? '准备开始';
     this.process.textContent = update.completed
       ? '车辆进入成品物流月台'
       : update.processStage ?? '生产流程';
+    this.interaction.textContent = update.interaction ?? '';
+    this.interaction.hidden = !update.interaction;
     this.controls.replaceChildren();
     this.controls.hidden = !update.controls || update.controls.length === 0;
     for (const control of update.controls ?? []) {
@@ -106,7 +127,9 @@ export class TourOverlay {
     for (let markerIndex = 1; markerIndex <= count; markerIndex += 1) {
       const marker = this.element.ownerDocument.createElement('i');
       marker.dataset.role = 'tour-marker';
-      marker.dataset.state = update.completed || markerIndex < index
+      const completed = update.completedStages?.includes(markerIndex)
+        ?? (update.completed || markerIndex < index);
+      marker.dataset.state = completed
         ? 'complete'
         : markerIndex === index
           ? 'active'

@@ -7,6 +7,10 @@ import {
   FACTORY_VISIT_STOPS,
   FACTORY_QUICK_ACTION_GROUPS,
   FACTORY_SCENARIOS,
+  arriveAtFactoryVisitStop,
+  createFactoryVisitMissionState,
+  factoryVisitMissionProgress,
+  leaveFactoryVisitStop,
   matchFactoryScenario,
 } from '../shared/factory-scenarios.js';
 
@@ -39,6 +43,18 @@ test('publishes a complete manual factory visit route', () => {
   expect(new Set(FACTORY_VISIT_STOPS.map((stop) => stop.tag)).size)
     .toBe(FACTORY_VISIT_STOPS.length);
   expect(FACTORY_VISIT_STOPS.every((stop) => stop.guide.length > 0)).toBe(true);
+});
+
+test('tracks discovered visit stops without treating skipped nodes as complete', () => {
+  const initial = createFactoryVisitMissionState();
+  const atPaint = arriveAtFactoryVisitStop(initial, 'PAINT-301');
+  const repeated = arriveAtFactoryVisitStop(atPaint, 'PAINT-301');
+  const progress = factoryVisitMissionProgress(repeated);
+
+  expect(repeated.visitedTags).toEqual(['PAINT-301']);
+  expect(repeated.currentTag).toBe('PAINT-301');
+  expect(progress).toEqual({ visited: 1, total: 19, complete: false });
+  expect(leaveFactoryVisitStop(repeated).currentTag).toBeNull();
 });
 
 test('every static scenario uses approved tools and focuses equipment', () => {
